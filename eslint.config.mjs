@@ -16,7 +16,7 @@ const compat = new FlatCompat({
   recommendedConfig: pluginJs.configs.recommended,
 });
 
-export default [
+const config = [
   {
     // Global ignores
     ignores: ['.next/*', 'node_modules/', 'coverage/', 'dist/'],
@@ -52,3 +52,5 @@ export default [
   // Prettier - MUST be last to override other formatting rules
   eslintPluginPrettierRecommended,
 ];
+
+export default config;
