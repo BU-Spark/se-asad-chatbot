@@ -32,7 +32,7 @@ describe('Home Page', () => {
     expect(mockOpen).toHaveBeenCalledWith('https://nextjs.org/docs', '_blank');
 
     fireEvent.click(screen.getByRole('button', { name: 'View on GitHub' }));
-    expect(mockOpen).toHaveBeenCalledWith('https://github.com/your-repo-link', '_blank');
+    expect(mockOpen).toHaveBeenCalledWith('https://github.com/BU-Spark/TEMPLATE-next-js-starter', '_blank');
   });
 
   const featureData = [
