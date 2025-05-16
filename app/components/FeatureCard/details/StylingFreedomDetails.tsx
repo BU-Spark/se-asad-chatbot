@@ -43,7 +43,7 @@ export const StylingFreedomDetails = () => {
       <ul>
         <li className={styles.detailListItem}>
           <a href="https://mui.com" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-            Material-UI (MUI)
+            Material UI (MUI)
           </a>
         </li>
         <li className={styles.detailListItem}>
