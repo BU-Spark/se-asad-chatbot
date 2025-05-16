@@ -43,8 +43,9 @@ export const StylingFreedomDetails = () => {
       <ul>
         <li className={styles.detailListItem}>
           <a href="https://mui.com" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-            Material UI (MUI)
-          </a>
+            Material UI
+          </a>{' '}
+          (Google&apos;s own component library)
         </li>
         <li className={styles.detailListItem}>
           <a href="https://chakra-ui.com" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
@@ -63,9 +64,16 @@ export const StylingFreedomDetails = () => {
           (Primitives)
         </li>
         <li className={styles.detailListItem}>
+          <a href="https://ant.design/" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
+            Ant Design
+          </a>{' '}
+          (Alibaba&apos;s affiliate component library)
+        </li>
+        <li className={styles.detailListItem}>
           <a href="https://ui.shadcn.com" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-            ShadCN/UI
-          </a>
+            shadcn/ui
+          </a>{' '}
+          (Built with Radix primitives + Tailwind)
         </li>
       </ul>
     </>

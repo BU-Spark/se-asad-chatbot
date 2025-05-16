@@ -8,7 +8,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.5;
+  opacity: 1;
 }
 
 .button:disabled {
@@ -29,7 +29,7 @@
 
 :global(html.dark) .primary {
   background-color: var(--primary-accent);
-  color: var(--page-bg);
+  color: #ffffff; /* Ensure text is white in dark mode */
 }
 
 :global(html.dark) .primary:not(:disabled):hover {
@@ -49,7 +49,7 @@
 
 :global(html.dark) .secondary {
   background-color: var(--card-bg);
-  color: var(--primary-accent);
+  color: #ffffff; /* Ensure text is white in dark mode */
   border: 1px solid var(--primary-accent);
 }
 
