@@ -1,168 +1,130 @@
-.page {
-  --gray-rgb: 0, 0, 0;
-  --gray-alpha-200: rgba(var(--gray-rgb), 0.08);
-  --gray-alpha-100: rgba(var(--gray-rgb), 0.05);
+/* 
+  Styling for app/page.tsx - CSS Modules 
+  This is a minimal set of styles for the starter page.
+  Students are encouraged to adapt or replace this with their chosen styling solution.
+*/
 
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
+/* This module uses global theme variables from app/globals.css. */
 
-  display: grid;
-  grid-template-rows: 20px 1fr 20px;
-  align-items: center;
-  justify-items: center;
-  min-height: 100svh;
-  padding: 80px;
-  gap: 64px;
-  font-family: var(--font-geist-sans);
-}
-
-@media (prefers-color-scheme: dark) {
-  .page {
-    --gray-rgb: 255, 255, 255;
-    --gray-alpha-200: rgba(var(--gray-rgb), 0.145);
-    --gray-alpha-100: rgba(var(--gray-rgb), 0.06);
-
-    --button-primary-hover: #ccc;
-    --button-secondary-hover: #1a1a1a;
-  }
-}
-
-.main {
+.container {
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  grid-row-start: 2;
+  flex: 1; /* Allows this container to grow and fill its parent (.main-content-container) */
+  padding: 2rem;
+  box-sizing: border-box;
 }
 
-.main ol {
-  font-family: var(--font-geist-mono);
-  padding-left: 0;
-  margin: 0;
-  font-size: 14px;
-  line-height: 24px;
-  letter-spacing: -0.01em;
-  list-style-position: inside;
+/* :global(.dark) .container { -- No longer needed as body handles theme
+  background-color: var(--page-bg-dark);
+  color: var(--text-color-dark);
+} */
+
+.heroSection {
+  text-align: center;
+  padding: 4rem 1rem;
+  border-bottom: 1px solid var(--card-border);
 }
 
-.main li:not(:last-of-type) {
-  margin-bottom: 8px;
+:global(.dark) .heroSection {
+  border-bottom-color: var(--card-border);
 }
 
-.main code {
-  font-family: inherit;
-  background: var(--gray-alpha-100);
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-weight: 600;
+.title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  background: linear-gradient(120deg, var(--primary-accent), var(--secondary-accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.ctas {
+:global(.dark) .title {
+  background: linear-gradient(120deg, var(--primary-accent), var(--secondary-accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+:global(.dark) .subtitle {
+  color: var(--text-color);
+}
+
+.ctaButtons {
   display: flex;
-  gap: 16px;
-}
-
-.ctas a {
-  appearance: none;
-  border-radius: 128px;
-  height: 48px;
-  padding: 0 20px;
-  border: none;
-  border: 1px solid transparent;
-  transition:
-    background 0.2s,
-    color 0.2s,
-    border-color 0.2s;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  font-size: 16px;
-  line-height: 20px;
-  font-weight: 500;
+  gap: 1rem;
+  margin-bottom: 3rem;
 }
 
-a.primary {
-  background: var(--foreground);
-  color: var(--background);
-  gap: 8px;
+/* Container for the columns of feature cards */
+.featuresContainer {
+  display: flex;
+  gap: 2rem; /* Gap between columns */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+  align-items: start;
 }
 
-a.secondary {
-  border-color: var(--gray-alpha-200);
-  min-width: 180px;
+.featureColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Styles for .featureCard, .featureIcon, .featureTitle, .featureDescription, */
+/* .featureDetails, .detailsVisible, and .expanded have been moved to */
+/* app/components/FeatureCard/FeatureCard.module.css */
+
+.themeToggleContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
 }
 
 .footer {
-  grid-row-start: 3;
-  display: flex;
-  gap: 24px;
+  text-align: center;
+  padding: 2rem 1rem;
+  margin-top: auto;
+  border-top: 1px solid var(--card-border); /* Use global generic variable */
+  font-size: 0.9rem;
+  opacity: 0.7;
 }
 
-.footer a {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+:global(.dark) .footer {
+  border-top-color: var(--card-border); /* Use global generic variable */
 }
 
-.footer img {
-  flex-shrink: 0;
-}
-
-/* Enable hover only on non-touch devices */
-@media (hover: hover) and (pointer: fine) {
-  a.primary:hover {
-    background: var(--button-primary-hover);
-    border-color: transparent;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .title {
+    font-size: 2.8rem;
   }
-
-  a.secondary:hover {
-    background: var(--button-secondary-hover);
-    border-color: transparent;
+  .subtitle {
+    font-size: 1.2rem;
   }
-
-  .footer a:hover {
-    text-decoration: underline;
-    text-underline-offset: 4px;
+  /* Adjust .featuresContainer for mobile, not .featuresSection */
+  .featuresContainer {
+    padding: 2rem 0.5rem;
+    flex-direction: column; /* Stack columns on narrower screens */
+    /* The gap between columns becomes a vertical gap on narrower screens */
   }
-}
-
-@media (max-width: 600px) {
-  .page {
-    padding: 32px;
-    padding-bottom: 80px;
-  }
-
-  .main {
-    align-items: center;
-  }
-
-  .main ol {
-    text-align: center;
-  }
-
-  .ctas {
-    flex-direction: column;
-  }
-
-  .ctas a {
-    font-size: 14px;
-    height: 40px;
-    padding: 0 16px;
-  }
-
-  a.secondary {
-    min-width: auto;
-  }
-
-  .footer {
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
+  .heroSection {
+    padding: 3rem 0.5rem;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
-  }
+/* Style the main HTML element within this module's scope using a local class */
+.pageMain {
+  flex-grow: 1;
 }
