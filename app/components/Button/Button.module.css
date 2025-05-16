@@ -19,7 +19,7 @@
 /* Variants using CSS variables from the global scope */
 .primary {
   background-color: var(--primary-accent);
-  color: #FFFFFF; /* Text color for primary buttons */
+  color: #ffffff; /* Text color for primary buttons */
   border: 1px solid transparent;
 }
 
@@ -67,7 +67,7 @@
 
 .outline:not(:disabled):hover {
   background-color: var(--primary-accent);
-  color: #FFFFFF; /* Text color for hovered outline buttons */
+  color: #ffffff; /* Text color for hovered outline buttons */
 }
 
 :global(html.dark) .outline {
@@ -94,4 +94,4 @@
 .large {
   padding: 1rem 2rem;
   font-size: 1.125rem;
-} 
+}

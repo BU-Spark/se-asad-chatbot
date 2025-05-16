@@ -36,7 +36,9 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* Apply dark mode variables to body when html.dark is present */
@@ -45,29 +47,28 @@ html.dark body {
   color: var(--text-color);
 }
 
-
 .main-content-container {
   width: 100%;
-  max-width: 70rem; 
+  max-width: 70rem;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem; 
-  padding-right: 1rem; 
+  padding-left: 1rem;
+  padding-right: 1rem;
   flex-grow: 1; /* Ensure main content can grow */
   display: flex; /* Added to allow children to flex if needed */
   flex-direction: column; /* Added for default stacking */
 }
 
-@media (min-width: 640px) { 
+@media (min-width: 640px) {
   .main-content-container {
-    padding-left: 1.5rem; 
+    padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
 }
 
-@media (min-width: 1024px) { 
+@media (min-width: 1024px) {
   .main-content-container {
-    padding-left: 2rem; 
+    padding-left: 2rem;
     padding-right: 2rem;
   }
 }

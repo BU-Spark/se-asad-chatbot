@@ -5,7 +5,12 @@
   padding: 2rem;
   text-align: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, max-height 0.4s ease-in-out, border-color 0.3s ease-in-out, background-image 0.3s ease-in-out;
+  transition:
+    transform 0.3s ease-in-out,
+    box-shadow 0.3s ease-in-out,
+    max-height 0.4s ease-in-out,
+    border-color 0.3s ease-in-out,
+    background-image 0.3s ease-in-out;
   cursor: pointer;
   overflow: hidden;
   background-image: linear-gradient(var(--card-bg), var(--card-bg));
@@ -17,8 +22,8 @@
   border-width: 2px;
   border-color: transparent;
   padding: calc(2rem - 1px);
-  background-image: linear-gradient(var(--card-bg), var(--card-bg)), 
-                    linear-gradient(120deg, var(--primary-accent), var(--secondary-accent));
+  background-image: linear-gradient(var(--card-bg), var(--card-bg)),
+    linear-gradient(120deg, var(--primary-accent), var(--secondary-accent));
   background-origin: padding-box, border-box;
   background-clip: padding-box, border-box;
 }
@@ -33,8 +38,8 @@
 /* Explicitly set expanded border color for dark mode */
 :global(html.dark) .featureCard.expanded {
   border-color: transparent;
-  background-image: linear-gradient(var(--card-bg), var(--card-bg)), 
-                    linear-gradient(120deg, var(--primary-accent), var(--secondary-accent));
+  background-image: linear-gradient(var(--card-bg), var(--card-bg)),
+    linear-gradient(120deg, var(--primary-accent), var(--secondary-accent));
 }
 
 .featureCard:hover {
@@ -74,7 +79,10 @@
   max-height: 0;
   opacity: 0;
   overflow: hidden;
-  transition: max-height 0.4s ease-out, opacity 0.3s ease-out 0.05s, transform 0.3s ease-out;
+  transition:
+    max-height 0.4s ease-out,
+    opacity 0.3s ease-out 0.05s,
+    transform 0.3s ease-out;
   text-align: left;
   border-top: 1px dashed var(--card-border);
   padding-top: 0;
@@ -142,8 +150,8 @@
 
 .detailListItem {
   margin-bottom: 0.5rem; /* Adjust as needed */
-  font-size: 0.95rem;    /* Match paragraph font size */
-  line-height: 1.7;      /* Match paragraph line height */
+  font-size: 0.95rem; /* Match paragraph font size */
+  line-height: 1.7; /* Match paragraph line height */
 }
 
 /* Ensure the last item in a list doesn't have extra margin if not desired, though usually fine */
@@ -189,4 +197,4 @@
 
 .detailIntroParagraph {
   margin-bottom: 0.5rem;
-} 
+}
