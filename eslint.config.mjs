@@ -16,7 +16,7 @@ const compat = new FlatCompat({
   recommendedConfig: pluginJs.configs.recommended,
 });
 
-export default [
+export const config = [
   {
     // Global ignores
     ignores: ['.next/*', 'node_modules/', 'coverage/', 'dist/'],
