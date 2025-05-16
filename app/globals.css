@@ -1,11 +1,13 @@
 :root {
   /* Global Theme Variables (Light Mode is default) */
   --page-bg: #f0f4f8;
+  --page-bg-gradient-start: #e6f4ff;
+  --page-bg-gradient-end: #89b2fa;
   --text-color: #2c3e50;
-  --primary-accent: #007bff;
+  --primary-accent: #0060c7;
   --secondary-accent: #28a745;
-  --card-bg: #ffffff;
-  --card-border: #dee2e6;
+  --card-bg: #bdd5ff;
+  --card-border: #78a0c8;
   --link-color: var(--primary-accent);
   --code-bg: #e9ecef;
 }
@@ -18,17 +20,21 @@ html.dark {
   color-scheme: dark;
   /* Dark Mode Theme Overrides */
   --page-bg: #1a202c;
+  --page-bg-gradient-start: #191425;
+  --page-bg-gradient-end: #0D1117;
   --text-color: #e2e8f0;
   --primary-accent: #a246f8;
   --secondary-accent: #f595c6;
-  --card-bg: #2d3748;
-  --card-border: #4a5568;
+  --card-bg: #191425;
+  --card-border: #2c3034;
   --link-color: var(--primary-accent);
   --code-bg: #2c3034;
 }
 
 body {
-  background-color: var(--page-bg);
+  background-image: linear-gradient(to bottom, var(--page-bg-gradient-start), var(--page-bg-gradient-end));
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--text-color);
   font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -37,13 +43,12 @@ body {
   display: flex;
   flex-direction: column;
   transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 /* Apply dark mode variables to body when html.dark is present */
 html.dark body {
-  background-color: var(--page-bg);
   color: var(--text-color);
 }
 

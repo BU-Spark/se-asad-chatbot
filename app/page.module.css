@@ -14,11 +14,6 @@
   box-sizing: border-box;
 }
 
-/* :global(.dark) .container { -- No longer needed as body handles theme
-  background-color: var(--page-bg-dark);
-  color: var(--text-color-dark);
-} */
-
 .heroSection {
   text-align: center;
   padding: 4rem 1rem;

@@ -73,7 +73,11 @@ export default function HomePage() {
             <Button variant="primary" size="large" onClick={() => openLink('https://nextjs.org/docs')}>
               Explore Next.js Docs
             </Button>
-            <Button variant="secondary" size="large" onClick={() => openLink('https://github.com/your-repo-link')}>
+            <Button
+              variant="secondary"
+              size="large"
+              onClick={() => openLink('https://github.com/BU-Spark/TEMPLATE-next-js-starter')}
+            >
               View on GitHub
             </Button>
           </div>
