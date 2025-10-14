@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ThemeToggle } from './components/ThemeToggle';
 import { Button } from './components/Button';
 import { FeatureCard, FeatureCardProps } from './components/FeatureCard';
 import {
@@ -59,10 +58,6 @@ export default function HomePage() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.themeToggleContainer}>
-        <ThemeToggle />
-      </div>
-
       <main className={styles.pageMain}>
         <section className={styles.heroSection}>
           <h1 className={styles.title}>Spark Your Next Creation! ✨</h1>
