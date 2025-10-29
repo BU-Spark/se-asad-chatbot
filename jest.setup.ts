@@ -12,3 +12,13 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: jest.fn(),
   })),
 });
+
+// Mock Clerk server auth to avoid importing ESM in tests
+jest.mock('@clerk/nextjs/server', () => ({
+  auth: async () => ({ userId: undefined }),
+}));
+
+// Mock Next.js redirect to a no-op in tests
+jest.mock('next/navigation', () => ({
+  redirect: jest.fn(),
+}));

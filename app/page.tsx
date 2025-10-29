@@ -1,109 +1,91 @@
-'use client';
+import Link from 'next/link';
+import { Button } from '@/components/Button';
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 
-import React, { useState } from 'react';
-import { Button } from './components/Button';
-import { FeatureCard, FeatureCardProps } from './components/FeatureCard';
-import {
-  ModernStackDetails,
-  StylingFreedomDetails,
-  DevToolsDetails,
-  ResponsiveDesignDetails,
-} from './components/FeatureCard/details';
-import styles from './page.module.css';
+export default async function Home() {
+  const { userId } = await auth();
 
-type FeatureData = Omit<FeatureCardProps, 'onClick' | 'isExpanded'>;
-
-const featureData: FeatureData[] = [
-  {
-    id: 'modern-stack',
-    icon: '🚀',
-    title: 'Modern Stack',
-    description: 'Next.js 15, React 19, TypeScript. Fast, efficient, and type-safe development.',
-    details: <ModernStackDetails />,
-  },
-  {
-    id: 'styling-freedom',
-    icon: '🎨',
-    title: 'Styling Freedom',
-    description: 'Styling agnostic! Choose Tailwind, CSS Modules, Emotion, or your favorite solution.',
-    details: <StylingFreedomDetails />,
-  },
-  {
-    id: 'dev-tools',
-    icon: '🛠️',
-    title: 'Dev Tools Ready',
-    description: 'ESLint, Prettier, Husky hooks, and Jest testing pre-configured for quality code.',
-    details: <DevToolsDetails />,
-  },
-  {
-    id: 'responsive-design',
-    icon: '📱',
-    title: 'Responsive Design',
-    description: 'Built with a responsive layout in mind. Looks great on all devices.',
-    details: <ResponsiveDesignDetails />,
-  },
-];
-
-export default function HomePage() {
-  const openLink = (url: string) => window.open(url, '_blank');
-  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
-
-  const handleCardClick = (cardId: string) => {
-    setExpandedCardId((prevId) => (prevId === cardId ? null : cardId));
-  };
-
-  // Split featureData into two columns
-  const column1Features = featureData.filter((_, index) => index % 2 === 0);
-  const column2Features = featureData.filter((_, index) => index % 2 === 1);
+  if (userId) {
+    redirect('/dashboard');
+  }
 
   return (
-    <div className={styles.container}>
-      <main className={styles.pageMain}>
-        <section className={styles.heroSection}>
-          <h1 className={styles.title}>Spark Your Next Creation! ✨</h1>
-          <p className={styles.subtitle}>
-            A Next.js & TypeScript template designed for rapid development and learning industry best practices.
-          </p>
-          <div className={styles.ctaButtons}>
-            <Button variant="primary" size="large" onClick={() => openLink('https://nextjs.org/docs')}>
-              Explore Next.js Docs
-            </Button>
-            <Button
-              variant="secondary"
-              size="large"
-              onClick={() => openLink('https://github.com/BU-Spark/TEMPLATE-next-js-starter')}
-            >
-              View on GitHub
-            </Button>
+    <div className="flex min-h-screen flex-col items-center">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container max-w-6xl mx-auto flex h-14 items-center">
+          <div className="mr-4 flex">
+            <Link href="/" className="mr-6 flex items-center space-x-2">
+              <span className="font-bold">Assistants Embedder</span>
+            </Link>
+          </div>
+          <div className="flex flex-1 items-center justify-end space-x-4">
+            <nav className="flex items-center space-x-2">
+              <Link href="/sign-in">
+                <Button variant="outline">Sign In</Button>
+              </Link>
+              <Link href="/sign-up">
+                <Button>Sign Up</Button>
+              </Link>
+            </nav>
+          </div>
+        </div>
+      </header>
+      <main className="flex-1 w-full">
+        <section className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container max-w-6xl mx-auto px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
+                  Group and Embed Your OpenAI Assistants
+                </h1>
+                <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
+                  Create groups of assistants and embed them on your website with a simple script tag.
+                </p>
+              </div>
+              <div className="space-x-4">
+                <Link href="/sign-up">
+                  <Button size="large">Get Started</Button>
+                </Link>
+                <Link href="#features">
+                  <Button variant="outline" size="large">
+                    Learn More
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
-
-        <section className={styles.featuresContainer}>
-          <div className={styles.featureColumn}>
-            {column1Features.map((feature) => (
-              <FeatureCard
-                key={feature.id}
-                {...feature}
-                isExpanded={expandedCardId === feature.id}
-                onClick={handleCardClick}
-              />
-            ))}
-          </div>
-          <div className={styles.featureColumn}>
-            {column2Features.map((feature) => (
-              <FeatureCard
-                key={feature.id}
-                {...feature}
-                isExpanded={expandedCardId === feature.id}
-                onClick={handleCardClick}
-              />
-            ))}
+        <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+          <div className="container max-w-6xl mx-auto px-4 md:px-6">
+            <div className="mx-auto grid max-w-5xl items-center gap-6 lg:grid-cols-2 lg:gap-12">
+              <div className="space-y-4">
+                <div className="inline-block rounded-lg bg-muted-foreground/20 px-3 py-1 text-sm">Easy Integration</div>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Embed with a Single Line of Code</h2>
+                <p className="max-w-[600px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
+                  Add your assistant groups to any website with a simple script tag. No complex setup required.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <div className="inline-block rounded-lg bg-muted-foreground/20 px-3 py-1 text-sm">
+                  Powerful Organization
+                </div>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Group Assistants with Drag & Drop</h2>
+                <p className="max-w-[600px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
+                  Easily organize your OpenAI assistants into logical groups using our intuitive drag and drop
+                  interface.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
       </main>
-
-      <footer className={styles.footer}>
-        <p>This template is a launchpad for your amazing projects. Happy coding!</p>
+      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
+        <div className="container max-w-6xl mx-auto">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            © {new Date().getFullYear()} Assistants Embedder. All rights reserved.
+          </p>
+        </div>
       </footer>
     </div>
   );

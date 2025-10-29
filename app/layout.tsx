@@ -1,34 +1,26 @@
-import type { Metadata } from 'next';
-import { Outfit } from 'next/font/google';
-import './globals.css';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import type React from 'react';
 import { ClerkProvider } from '@clerk/nextjs';
-import Header from './components/Header';
+import { ThemeProvider } from '@/components/theme-provider';
+import './globals.css';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 
-const outfit = Outfit({
-  subsets: ['latin'],
-  variable: '--font-outfit',
-});
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Spark! Next.js Template',
-  description: 'Spark! Next.js Template',
-  keywords: ['Next.js', 'React', 'TypeScript', 'Template'],
+  title: 'Assistants Embedder',
+  description: 'Group and embed your OpenAI assistants on your website',
+  generator: 'v0.dev',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={`${outfit.variable}`}>
-        <body>
-          <ErrorBoundary>
-            <Header />
-            <div className="main-content-container">{children}</div>
-          </ErrorBoundary>
+      <html lang="en" suppressHydrationWarning>
+        <body className={inter.className}>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
