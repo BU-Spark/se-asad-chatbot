@@ -1,18 +1,12 @@
 import type { Metadata } from 'next';
-import { Outfit } from 'next/font/google';
 import './globals.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ClerkProvider } from '@clerk/nextjs';
 import Header from './components/Header';
 
-const outfit = Outfit({
-  subsets: ['latin'],
-  variable: '--font-outfit',
-});
-
 export const metadata: Metadata = {
-  title: 'Spark! Next.js Template',
-  description: 'Spark! Next.js Template',
+  title: 'Assistants Embedder',
+  description: 'Group and embed your OpenAI assistants on your website',
   keywords: ['Next.js', 'React', 'TypeScript', 'Template'],
 };
 
@@ -23,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className={`${outfit.variable}`}>
+      <html lang="en" className="dark">
         <body>
           <ErrorBoundary>
             <Header />
