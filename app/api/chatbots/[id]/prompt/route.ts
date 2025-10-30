@@ -33,11 +33,14 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
     if (current_conversation_id) {
       const { data: conversation } = await supabase_admin
         .from('Conversation')
-        .select('messages')
+        .select('messages, chatbot_id')
         .eq('id', current_conversation_id)
         .single();
 
       if (conversation) {
+        if (conversation.chatbot_id !== chatbot_id) {
+          return NextResponse.json({ error: 'Conversation doesnt belong to this chatbot' }, { status: 403 });
+        }
         history = conversation.messages;
       }
     }
@@ -48,6 +51,11 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
       ...history,
       { role: 'user', content: userMessage },
     ];
+
+    // prompting and storing conversation
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error('OPENROUTER_API_KEY environment variable is not set');
+    }
 
     const openrouterResponse = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
