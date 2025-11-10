@@ -1,42 +1,101 @@
-// app/api/chatbot-groups/[groupId]/bots/route.ts
-export const runtime = 'nodejs';
+// app/api/chatbot-groups/[groupId]/route.ts
 
+import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { NextRequest, NextResponse } from 'next/server';
-import { getUserRowByClerkId, saveGroups, assertBotOwnedByUser } from '@/lib/groups';
+import { supabase_admin } from '@/lib/supabase_admin';
 
-async function getUserIdOrDev() {
-  const { userId } = await auth();
-  return userId ?? process.env.DEV_CLERK_ID ?? null;
+type Group = {
+  id: string;
+  name: string;
+  assistant_ids: string[];
+  created_at: string;
+};
+
+/**
+ * Add assistants to a specific group.
+ * This merges new assistant IDs into the group's assistant_ids array.
+ */
+export async function POST(req: Request, { params }: { params: { groupId: string } }) {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+
+  const { assistantIds } = await req.json();
+  if (!Array.isArray(assistantIds))
+    return NextResponse.json({ message: 'assistantIds must be an array' }, { status: 400 });
+
+  const { data: existing, error: getErr } = await supabase_admin
+    .from('Users')
+    .select('chatbot_groups')
+    .eq('clerk_id', clerkId)
+    .maybeSingle();
+
+  if (getErr) {
+    console.error('POST /chatbot-groups getErr:', getErr);
+    return NextResponse.json({ message: getErr.message }, { status: 500 });
+  }
+
+  const groups: Group[] = (existing?.chatbot_groups ?? []) as Group[];
+  const idx = groups.findIndex((g) => g.id === params.groupId);
+  if (idx === -1) return NextResponse.json({ message: 'Group not found' }, { status: 404 });
+
+  const merged = Array.from(new Set([...(groups[idx].assistant_ids || []), ...assistantIds]));
+  const updatedGroups = [...groups];
+  updatedGroups[idx] = { ...groups[idx], assistant_ids: merged };
+
+  const { error: updErr } = await supabase_admin
+    .from('Users')
+    .update({ chatbot_groups: updatedGroups })
+    .eq('clerk_id', clerkId);
+
+  if (updErr) {
+    console.error('POST /chatbot-groups updErr:', updErr);
+    return NextResponse.json({ message: updErr.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true, assistant_ids: merged });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { groupId: string } }) {
-  try {
-    const userId = await getUserIdOrDev();
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+/**
+ * Delete a specific group for the current user.
+ * If the group doesn’t exist, returns success anyway (idempotent delete).
+ */
+export async function DELETE(_: Request, { params }: { params: { groupId: string } }) {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
-    const groupId = params.groupId;
-    const body = await req.json().catch(() => null) as { chatbotId?: string } | null;
-    const chatbotId = body?.chatbotId;
-    if (!groupId || !chatbotId) {
-      return NextResponse.json({ error: 'groupId/chatbotId required' }, { status: 400 });
-    }
+  const { data: existing, error: getErr } = await supabase_admin
+    .from('Users')
+    .select('chatbot_groups')
+    .eq('clerk_id', clerkId)
+    .maybeSingle();
 
-    await assertBotOwnedByUser(chatbotId, userId);
-
-    const user = await getUserRowByClerkId(userId);
-    const groups = (user.chatbot_groups ?? []) as any[];
-    const idx = groups.findIndex(g => g?.id === groupId);
-    if (idx === -1) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
-
-    const bot_ids: string[] = Array.from(new Set([...(groups[idx].bot_ids ?? []), chatbotId]));
-    const updated = { ...groups[idx], bot_ids };
-    const next = [...groups];
-    next[idx] = updated;
-
-    await saveGroups(user.id, next);
-    return NextResponse.json(updated, { status: 200 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message ?? 'Server error' }, { status: 500 });
+  if (getErr) {
+    console.error('DELETE /chatbot-groups getErr:', getErr);
+    return NextResponse.json({ message: getErr.message }, { status: 500 });
   }
+
+  const groups: Group[] = (existing?.chatbot_groups ?? []) as Group[];
+  const before = groups.length;
+  const updated = groups.filter((g) => g.id !== params.groupId);
+
+  // Idempotent delete: return 200 even if not found
+  if (updated.length === before) {
+    console.warn('DELETE /chatbot-groups: group not found', {
+      clerkId,
+      groupId: params.groupId,
+    });
+    return NextResponse.json({ success: true });
+  }
+
+  const { error: updErr } = await supabase_admin
+    .from('Users')
+    .update({ chatbot_groups: updated })
+    .eq('clerk_id', clerkId);
+
+  if (updErr) {
+    console.error('DELETE /chatbot-groups updErr:', updErr);
+    return NextResponse.json({ message: updErr.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
 }

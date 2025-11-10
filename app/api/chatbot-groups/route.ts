@@ -1,29 +1,54 @@
-// app/api/chatbot-groups/route.ts
-export const runtime = 'nodejs';
+import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { NextRequest, NextResponse } from 'next/server';
-import { getOrCreateUserRowByClerkId, makeGroup, saveGroups } from '@/lib/groups';
+import { supabase_admin } from '@/lib/supabase_admin';
 
-async function getUserIdOrDev() {
-  const { userId } = await auth();
-  return userId ?? process.env.DEV_CLERK_ID ?? null;
+type Group = { id: string; name: string; assistant_ids: string[]; created_at: string };
+
+export async function GET() {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) return NextResponse.json([]);
+
+  const { data, error } = await supabase_admin
+    .from('Users')
+    .select('chatbot_groups')
+    .eq('clerk_id', clerkId)
+    .maybeSingle();
+
+  if (error) return NextResponse.json({ message: error.message }, { status: 500 });
+
+  const groups: Group[] = (data?.chatbot_groups ?? []) as Group[];
+  return NextResponse.json(groups);
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const userId = await getUserIdOrDev();
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function POST(req: Request) {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
-    const { name } = await req.json();
-    const user = await getOrCreateUserRowByClerkId(userId);   // <— create if missing
+  const { name } = await req.json();
+  if (!name) return NextResponse.json({ message: 'Missing name' }, { status: 400 });
 
-    const newGrp = makeGroup(name || 'New group');
-    const next = [newGrp, ...(user.chatbot_groups ?? [])];
+  const newGroup: Group = {
+    id: crypto.randomUUID(),
+    name,
+    assistant_ids: [],
+    created_at: new Date().toISOString(),
+  };
 
-    await saveGroups(user.id, next);
-    return NextResponse.json(newGrp, { status: 201 });
-  } catch (e: any) {
-    console.error('POST /api/chatbot-groups failed:', e);     // <— log to terminal
-    return NextResponse.json({ error: e.message ?? 'Server error' }, { status: 500 });
-  }
+  const { data: existing, error: getErr } = await supabase_admin
+    .from('Users')
+    .select('chatbot_groups')
+    .eq('clerk_id', clerkId)
+    .maybeSingle();
+  if (getErr) return NextResponse.json({ message: getErr.message }, { status: 500 });
+
+  const current: Group[] = (existing?.chatbot_groups ?? []) as Group[];
+  const updated = [newGroup, ...current];
+
+  const { error: updErr } = await supabase_admin
+    .from('Users')
+    .update({ chatbot_groups: updated })
+    .eq('clerk_id', clerkId);
+
+  if (updErr) return NextResponse.json({ message: updErr.message }, { status: 500 });
+  return NextResponse.json(newGroup);
 }
