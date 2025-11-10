@@ -1,125 +1,160 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase_admin } from '../../../../../lib/supabase_admin';
-import { openrouter } from '../../../../../lib/openrouter';
+import axios from 'axios';
 
-type Message = { role: 'system' | 'user' | 'assistant'; content: string };
+type Message = {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+};
+
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get('origin');
+
+  if (!origin) {
+    return new NextResponse(null, { status: 403 });
+  }
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
+interface ChatbotData {
+  personality: string;
+  Users: {
+    clerk_id: string;
+    allowed_domains: string[];
+  } | null;
+}
 
 export async function POST(req: NextRequest, context: { params: { id: string } }) {
+  const origin = req.headers.get('origin');
+
+  const createResponse = (body: unknown, status: number) => {
+    return new NextResponse(JSON.stringify(body), {
+      status,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': origin || '',
+      },
+    });
+  };
+
   try {
-    const chatbot_id = context.params.id;
+    const requestHostname = origin ? new URL(origin).hostname : null;
+
     const { message: userMessage, conversation_id } = await req.json();
+    const { id: chatbot_id } = await context.params;
 
     if (!userMessage) {
-      return NextResponse.json({ error: 'No message provided' }, { status: 400 });
+      return createResponse({ error: 'No message' }, 400);
     }
 
-    // Fetch chatbot personality
+    // Fetching chatbot personality
     const { data: chatbot, error: chatbotError } = await supabase_admin
       .from('Chatbot')
-      .select('personality')
+      .select('personality, Users(clerk_id, allowed_domains)')
       .eq('id', chatbot_id)
-      .single();
+      .single<ChatbotData>();
 
     if (chatbotError || !chatbot) {
-      return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 });
+      console.error('Supabase query failed:', chatbotError);
+      return createResponse({ error: 'Chatbot not found' }, 404);
     }
 
-    // Load previous messages if conversation exists
+    const userData = chatbot.Users;
+
+    if (!userData) {
+      console.error(`User data not found for chatbot ${chatbot_id}`);
+      return createResponse({ error: 'Chatbot configuration error' }, 500);
+    }
+    const allowedDomains = userData?.allowed_domains || [];
+
+    if (!requestHostname || !allowedDomains.includes(requestHostname)) {
+      console.error(`Website'${requestHostname}' not in allowed list [${allowedDomains.join(', ')}]`);
+      return createResponse({ error: 'Host not allowed' }, 403);
+    }
+
     let history: Message[] = [];
-    if (conversation_id) {
+    const current_conversation_id = conversation_id;
+
+    if (current_conversation_id) {
       const { data: conversation } = await supabase_admin
         .from('Conversation')
         .select('messages, chatbot_id')
-        .eq('id', conversation_id)
+        .eq('id', current_conversation_id)
         .single();
 
       if (conversation) {
         if (conversation.chatbot_id !== chatbot_id) {
-          return NextResponse.json({ error: 'Conversation does not belong to this chatbot' }, { status: 403 });
+          return createResponse({ error: 'Conversation doesnt belong to this chatbot' }, 403);
         }
-        history = Array.isArray(conversation.messages) ? conversation.messages : [];
+        history = conversation.messages;
       }
     }
 
-    // Create the prompt for OpenRouter
+    // Creating prompt for openrouter
     const messagesForAPI: Message[] = [
       { role: 'system', content: chatbot.personality },
       ...history,
       { role: 'user', content: userMessage },
     ];
 
-    // Send to OpenRouter
-    const completion = await openrouter.chat({
-      messages: messagesForAPI,
-      temperature: 0.7,
-    });
-
-    const chatbotReply = completion.content ?? 'No reply generated.';
-    try {
-      await supabase_admin.from('MessageHistory').insert([
-        {
-          conversation_id,
-          role: 'user',
-          content: userMessage,
-          model_used: completion.model,
-        },
-        {
-          conversation_id,
-          role: 'assistant',
-          content: chatbotReply,
-          model_used: completion.model,
-        },
-      ]);
-    } catch (err) {
-      console.warn('MessageHistory logging skipped:', err.message);
+    // prompting and storing conversation
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error('OPENROUTER_API_KEY environment variable is not set');
     }
 
-    // Log usage and cost (optional)
-    try {
-      if (completion.usage || completion.cost) {
-        await supabase_admin.from('UsageCost').insert({
-          conversation_id,
-          model: completion.model,
-          total_tokens: completion.usage?.total_tokens ?? null,
-          prompt_tokens: completion.usage?.prompt_tokens ?? null,
-          completion_tokens: completion.usage?.completion_tokens ?? null,
-          cost: completion.cost ?? null,
-        });
+    const openrouterResponse = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: 'openai/gpt-5',
+        messages: messagesForAPI,
+        max_tokens: 1024,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'http://localhost:3000',
+          'X-Title': 'Chatbot app',
+        },
       }
-    } catch (err) {
-      console.warn('UsageCost logging skipped:', err.message);
-    }
+    );
 
-    // Update or create conversation
+    const chatbotReply = openrouterResponse.data.choices[0].message.content;
+
+    // Update convo history
     const newHistory: Message[] = [
       ...history,
       { role: 'user', content: userMessage },
       { role: 'assistant', content: chatbotReply },
     ];
 
-    if (conversation_id) {
-      await supabase_admin.from('Conversation').update({ messages: newHistory }).eq('id', conversation_id);
+    if (current_conversation_id) {
+      await supabase_admin.from('Conversation').update({ messages: newHistory }).eq('id', current_conversation_id);
 
-      return NextResponse.json({ reply: chatbotReply, model: usedModel, usage, cost }, { status: 200 });
+      return createResponse({ reply: chatbotReply }, 200);
     } else {
       const { data: newConversation, error } = await supabase_admin
         .from('Conversation')
-        .insert({ chatbot_id, messages: newHistory })
+        .insert({ chatbot_id: chatbot_id, messages: newHistory })
         .select('id')
         .single();
 
       if (error || !newConversation) {
-        return NextResponse.json({ error: 'Failed to create new conversation' }, { status: 500 });
+        console.error('Failed to create new conversation', error);
+        return createResponse({ error: 'Failed to create new conversation' }, 500);
       }
 
-      return NextResponse.json(
-        { reply: chatbotReply, conversation_id: newConversation.id, model: usedModel, usage, cost },
-        { status: 200 }
-      );
+      return createResponse({ reply: chatbotReply, conversation_id: newConversation.id }, 200);
     }
-  } catch (err) {
-    console.error('API error', err);
-    const message = err instanceof Error ? err.message : 'Failed to process prompt';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (error) {
+    console.error('API error', error);
+    return createResponse({ error: 'Failed to process prompt' }, 500);
   }
 }
