@@ -2,7 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Widget } from './Widget';
 
-const script = document.currentScript as HTMLElement;
+const script = document.currentScript;
 const chatbotId = script?.getAttribute('data-chatbot-id');
 
 if (!chatbotId) {

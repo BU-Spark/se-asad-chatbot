@@ -16,10 +16,9 @@ interface DeepChatResponseSignals {
   onResponse: (response: { text?: string; error?: string; role: 'assistant' }) => void;
 }
 
-let currentConversationId: string | null = null;
-
 export function Widget({ chatbotId }: WidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   const chatHandler = async (body: DeepChatRequestBody, signals: DeepChatResponseSignals) => {
     const userMessage = body.messages[body.messages.length - 1].text;
@@ -30,7 +29,7 @@ export function Widget({ chatbotId }: WidgetProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          conversation_id: currentConversationId, // Sends null to indicate first message
+          conversation_id: conversationId, // Sends null to indicate first message
         }),
       });
 
@@ -41,7 +40,7 @@ export function Widget({ chatbotId }: WidgetProps) {
       const data = await response.json();
 
       if (data.conversation_id) {
-        currentConversationId = data.conversation_id;
+        setConversationId(data.conversation_id);
       }
 
       signals.onResponse({ text: data.reply, role: 'assistant' });
