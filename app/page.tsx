@@ -1,110 +1,47 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Button } from './components/Button';
-import { FeatureCard, FeatureCardProps } from './components/FeatureCard';
-import {
-  ModernStackDetails,
-  StylingFreedomDetails,
-  DevToolsDetails,
-  ResponsiveDesignDetails,
-} from './components/FeatureCard/details';
-import styles from './page.module.css';
+import Link from 'next/link';
 
-type FeatureData = Omit<FeatureCardProps, 'onClick' | 'isExpanded'>;
-
-const featureData: FeatureData[] = [
-  {
-    id: 'modern-stack',
-    icon: '🚀',
-    title: 'Modern Stack',
-    description: 'Next.js 15, React 19, TypeScript. Fast, efficient, and type-safe development.',
-    details: <ModernStackDetails />,
-  },
-  {
-    id: 'styling-freedom',
-    icon: '🎨',
-    title: 'Styling Freedom',
-    description: 'Styling agnostic! Choose Tailwind, CSS Modules, Emotion, or your favorite solution.',
-    details: <StylingFreedomDetails />,
-  },
-  {
-    id: 'dev-tools',
-    icon: '🛠️',
-    title: 'Dev Tools Ready',
-    description: 'ESLint, Prettier, Husky hooks, and Jest testing pre-configured for quality code.',
-    details: <DevToolsDetails />,
-  },
-  {
-    id: 'responsive-design',
-    icon: '📱',
-    title: 'Responsive Design',
-    description: 'Built with a responsive layout in mind. Looks great on all devices.',
-    details: <ResponsiveDesignDetails />,
-  },
-];
-
-export default function HomePage() {
-  const openLink = (url: string) => window.open(url, '_blank');
-  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
-
-  const handleCardClick = (cardId: string) => {
-    setExpandedCardId((prevId) => (prevId === cardId ? null : cardId));
-  };
-
-  // Split featureData into two columns
-  const column1Features = featureData.filter((_, index) => index % 2 === 0);
-  const column2Features = featureData.filter((_, index) => index % 2 === 1);
-
+export default function LandingPage() {
   return (
-    <div className={styles.container}>
-      <main className={styles.pageMain}>
-        <section className={styles.heroSection}>
-          <h1 className={styles.title}>Spark Your Next Creation! ✨</h1>
-          <p className={styles.subtitle}>
-            A Next.js & TypeScript template designed for rapid development and learning industry best practices.
-          </p>
-          <div className={styles.ctaButtons}>
-            <Button variant="primary" size="large" onClick={() => openLink('https://nextjs.org/docs')}>
-              Explore Next.js Docs
-            </Button>
-            <Button
-              variant="secondary"
-              size="large"
-              onClick={() => openLink('https://github.com/BU-Spark/TEMPLATE-next-js-starter')}
-            >
-              View on GitHub
-            </Button>
-          </div>
-        </section>
+    <main className="relative min-h-[calc(100vh-56px)] bg-neutral-950 text-neutral-100">
+      {/* subtle radial backdrop */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_40%_at_50%_0%,rgba(16,185,129,0.12),transparent_60%)]" />
 
-        <section className={styles.featuresContainer}>
-          <div className={styles.featureColumn}>
-            {column1Features.map((feature) => (
-              <FeatureCard
-                key={feature.id}
-                {...feature}
-                isExpanded={expandedCardId === feature.id}
-                onClick={handleCardClick}
-              />
-            ))}
-          </div>
-          <div className={styles.featureColumn}>
-            {column2Features.map((feature) => (
-              <FeatureCard
-                key={feature.id}
-                {...feature}
-                isExpanded={expandedCardId === feature.id}
-                onClick={handleCardClick}
-              />
-            ))}
-          </div>
-        </section>
-      </main>
+      <div className="relative mx-auto flex max-w-3xl flex-col items-center px-4 pt-16 sm:pt-20">
+        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-center">Assistants</h2>
+        <p className="mt-2 max-w-[42ch] text-center text-sm text-neutral-400">
+          Create, manage, and analyze your AI assistants — all in one place.
+        </p>
 
-      <footer className={styles.footer}>
-        <p>This template is a launchpad for your amazing projects. Happy coding!</p>
-      </footer>
-    </div>
+        <div className="mt-8 grid w-full gap-3 sm:grid-cols-3">
+          <Link
+            href="/assistant/create-chatbot"
+            className="rounded-xl bg-emerald-600 px-6 py-4 text-center text-sm font-medium text-white shadow-sm transition
+                       hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            Create Assistant
+          </Link>
+
+          <Link
+            href="/assistant/manage"
+            className="rounded-xl border border-neutral-700 bg-neutral-900 px-6 py-4 text-center text-sm font-medium
+                       text-neutral-100 transition hover:border-emerald-600 hover:text-emerald-400
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            Manage Assistants
+          </Link>
+
+          <Link
+            href="/analytics"
+            className="rounded-xl border border-neutral-700 bg-neutral-900 px-6 py-4 text-center text-sm font-medium
+                       text-neutral-100 transition hover:border-emerald-600 hover:text-emerald-400
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            View Analytics
+          </Link>
+        </div>
+      </div>
+    </main>
   );
 }

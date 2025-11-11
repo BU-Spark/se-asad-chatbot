@@ -10,15 +10,12 @@ export const metadata: Metadata = {
   keywords: ['Next.js', 'React', 'TypeScript', 'Template'],
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
-      <html lang="en" className="dark">
-        <body>
+      {/* Extensions like Grammarly add attributes; suppress the mismatch */}
+      <html lang="en" className="dark" suppressHydrationWarning>
+        <body suppressHydrationWarning>
           <ErrorBoundary>
             <Header />
             <div className="main-content-container">{children}</div>
