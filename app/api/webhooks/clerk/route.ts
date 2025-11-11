@@ -6,7 +6,7 @@ import { supabase_admin } from '@/lib/supabase_admin';
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
   if (!WEBHOOK_SECRET) {
-    throw new Error('No CLERK_WEBHOOK_SECRET in environment variables');
+    return new NextResponse('Error: CLERK_WEBHOOK_SECRET not configured', { status: 500 });
   }
 
   const headerPayload = req.headers;
@@ -66,16 +66,17 @@ export async function POST(req: Request) {
       return new NextResponse('Error processing webhook', { status: 500 });
     }
 
-    console.log(`User ${id} was created or updated in Supabase.`);
+    console.log('User was created or updated in Supabase.');
   }
 
   if (eventType === 'user.deleted') {
     const { error: deleteError } = await supabase_admin.from('Users').delete().eq('clerk_id', id);
     if (deleteError) {
+      // Still returns status 200 to clerk. Otherwise clerk will keep retrying
       console.warn(`Supabase delete error (user ${id}):`, deleteError.message);
     }
 
-    console.log(`User ${id} was deleted from Supabase.`);
+    console.log('User was deleted from Supabase.');
   }
 
   return new NextResponse('Webhook processed', { status: 200 });
