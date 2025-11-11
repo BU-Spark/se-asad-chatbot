@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   console.log(`Webhook received: ${eventType}`);
 
   if (eventType === 'user.created' || eventType === 'user.updated') {
-    const { email_addresses, first_name, last_name, image_url } = wh_event.data;
+    const { email_addresses, first_name, last_name } = wh_event.data;
     const email = email_addresses[0]?.email_address;
 
     if (!id || !email) {
@@ -55,7 +55,6 @@ export async function POST(req: Request) {
         email: email,
         first_name: first_name,
         last_name: last_name,
-        profile_image_url: image_url,
       },
       {
         onConflict: 'clerk_id',
