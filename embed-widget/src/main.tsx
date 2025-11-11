@@ -1,0 +1,21 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { Widget } from './Widget';
+
+const script = document.currentScript;
+const chatbotId = script?.getAttribute('data-chatbot-id');
+
+if (!chatbotId) {
+  console.error('Chatbot Embed: "data-chatbot-id" attribute not found on script tag.');
+} else {
+  const container = document.createElement('div');
+  container.id = 'chatbot-embed-root';
+  document.body.appendChild(container);
+
+  const root = createRoot(container);
+  root.render(
+    <React.StrictMode>
+      <Widget chatbotId={chatbotId} />
+    </React.StrictMode>
+  );
+}
