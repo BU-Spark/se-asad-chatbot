@@ -1,11 +1,6 @@
+// Server-side (service role key, bypass RLS)
+
 import { createClient } from '@supabase/supabase-js';
-
-function requireEnv(name: string) {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
-
 
 if (!process.env.PUBLIC_SUPABASE_URL) throw new Error('PUBLIC_SUPABASE_URL missing');
 if (!process.env.SUPABASE_SECRET_KEY) throw new Error('SUPABASE_SECRET_KEY missing');

@@ -36,11 +36,20 @@ export default function GroupsPage() {
         const res = await fetch(`/api/chatbot-groups/${groupId}/bots`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chatbotId }),
+            body: JSON.stringify({ assistantIds: [chatbotId] }),
         });
-        const updated = await res.json();
-        if (res.ok) setGroups(prev => prev.map(g => (g.id === updated.id ? updated : g)));
+        const json = await res.json();
+
+        if (!res.ok) {
+            alert(json.message || 'Failed to add assistant');
+            return;
+        }
+
+        setGroups(prev =>
+            prev.map(g => (g.id === json.id ? { ...g, assistant_ids: json.assistant_ids } : g))
+        );
     }
+
 
     return (
         <div className="p-6 space-y-8">

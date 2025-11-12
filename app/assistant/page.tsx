@@ -1,4 +1,4 @@
-import { getOpenAIKey } from '@/lib/db-user-settings';
+// import { getOpenAIKey } from '@/lib/db-user-settings';
 import { redirect } from 'next/navigation';
 import { Button } from '@/app/components/ui/button';
 import { ExternalLink, Plus, Download, Import } from 'lucide-react';
@@ -57,7 +57,7 @@ export default async function AssistantsPage() {
             </Link>
           </Button>
           <Button asChild>
-            <Link href="/assistants/create" className="flex items-center gap-2">
+            <Link href="/assistants/create-chatbot" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Create New
             </Link>
