@@ -30,7 +30,7 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
     const fetchConversationHistory = async () => {
       setIsLoadingHistory(true);
       try {
-        const storedConversationIds = JSON.parse(localStorage.getItem(sessionKey) || '{}');
+        const storedConversationIds = JSON.parse(sessionStorage.getItem(sessionKey) || '{}');
         const storedConversationId = storedConversationIds[chatbot.id] || null;
 
         console.log('Fetching conversation for chatbot:', chatbot.id, 'conversationId:', storedConversationId);
@@ -64,7 +64,7 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
 
             const newIds = { ...storedConversationIds };
             delete newIds[chatbot.id];
-            localStorage.setItem(sessionKey, JSON.stringify(newIds));
+            sessionStorage.setItem(sessionKey, JSON.stringify(newIds));
             setInitialMessages([]);
             setConversationId(null);
           }
@@ -122,12 +122,11 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
 
         if (data.conversation_id) {
           console.log('Updating conversation ID to:', data.conversation_id);
-          setConversationId(data.conversation_id);
           conversationIdRef.current = data.conversation_id;
 
-          const storedConversationIds = JSON.parse(localStorage.getItem(sessionKey) || '{}');
+          const storedConversationIds = JSON.parse(sessionStorage.getItem(sessionKey) || '{}');
           const newIds = { ...storedConversationIds, [chatbot.id]: data.conversation_id };
-          localStorage.setItem(sessionKey, JSON.stringify(newIds));
+          sessionStorage.setItem(sessionKey, JSON.stringify(newIds));
         }
       } catch (error) {
         console.error('Chat handler error:', error);
