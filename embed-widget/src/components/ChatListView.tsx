@@ -10,7 +10,7 @@ interface ChatListViewProps {
 
 export function ChatListView({ chatbots, onSelectChatbot, onClose }: ChatListViewProps) {
   return (
-    <div style={styles.panel}>
+    <>
       <WidgetHeader title="Conversations" onClose={onClose} />
       <div style={styles.chatList}>
         {chatbots.map((bot) => (
@@ -26,6 +26,6 @@ export function ChatListView({ chatbots, onSelectChatbot, onClose }: ChatListVie
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }

@@ -112,7 +112,7 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
     const openrouterResponse = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: 'openai/gpt-5',
+        model: 'kwaipilot/kat-coder-pro:free',
         messages: messagesForAPI,
         max_tokens: 1024,
       },

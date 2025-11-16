@@ -8,11 +8,11 @@ interface ErrorPanelProps {
 
 export function ErrorPanel({ error, onClose }: ErrorPanelProps) {
   return (
-    <div style={styles.panel}>
+    <>
       <WidgetHeader title="Error" onClose={onClose} />
       <div style={styles.panelContent}>
         <p>{error}</p>
       </div>
-    </div>
+    </>
   );
 }
