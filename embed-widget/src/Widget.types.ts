@@ -20,4 +20,7 @@ export interface DeepChatResponseSignals {
   onResponse: (response: { text?: string; error?: string; role: 'assistant' }) => void;
 }
 
-export type WidgetView = 'closed' | 'list' | 'chat';
+export interface MessageContent {
+  role: 'user' | 'assistant';
+  text: string;
+}

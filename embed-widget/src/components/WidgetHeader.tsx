@@ -18,7 +18,7 @@ export function WidgetHeader({ title, onClose, onBack }: WidgetHeaderProps) {
       </button>
       <p style={styles.headerTitle}>{title}</p>
       <button onClick={onClose} style={styles.headerButton}>
-        ✕
+        X
       </button>
     </div>
   );
