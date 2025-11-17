@@ -3,9 +3,7 @@ import type { ChatbotConfig, DeepChatRequestBody, DeepChatResponseSignals, Messa
 
 interface BackendMessage {
   role: 'user' | 'assistant';
-  content?: string;
-  text?: string;
-  message?: string;
+  content: string;
 }
 
 export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isActive: boolean) {
@@ -33,43 +31,44 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
         const storedConversationIds = JSON.parse(sessionStorage.getItem(sessionKey) || '{}');
         const storedConversationId = storedConversationIds[chatbot.id] || null;
 
-        console.log('Fetching conversation for chatbot:', chatbot.id, 'conversationId:', storedConversationId);
-
         if (storedConversationId) {
           const url = `http://localhost:3000/api/chatbots/${chatbot.id}/conversations/${storedConversationId}`;
-          console.log('Fetching from:', url);
 
-          const response = await fetch(url);
+          const abortController = new AbortController();
+          const timeoutId = setTimeout(() => abortController.abort(), 10000);
 
-          console.log('Response status:', response.status);
+          try {
+            const response = await fetch(url, {
+              signal: abortController.signal,
+            });
 
-          if (response.ok) {
-            const data = await response.json();
-            console.log('Conversation data received:', data);
+            clearTimeout(timeoutId);
 
-            const messages: MessageContent[] = (data.messages || []).map((msg: BackendMessage) => ({
-              role: msg.role,
-              text: msg.content || msg.text || msg.message,
-            }));
+            if (response.ok) {
+              const data = await response.json();
 
-            console.log('Transformed messages:', messages);
-            console.log('Setting initial messages and conversation ID');
+              const messages: MessageContent[] = (data.messages || []).map((msg: BackendMessage) => ({
+                role: msg.role,
+                text: msg.content,
+              }));
 
-            setInitialMessages(messages);
-            setConversationId(storedConversationId);
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Failed to fetch conversation:', response.status, errorData);
-            console.error('Failed URL was:', url);
-
-            const newIds = { ...storedConversationIds };
-            delete newIds[chatbot.id];
-            sessionStorage.setItem(sessionKey, JSON.stringify(newIds));
-            setInitialMessages([]);
-            setConversationId(null);
+              setInitialMessages(messages);
+              setConversationId(storedConversationId);
+            } else {
+              const newIds = { ...storedConversationIds };
+              delete newIds[chatbot.id];
+              sessionStorage.setItem(sessionKey, JSON.stringify(newIds));
+              setInitialMessages([]);
+              setConversationId(null);
+            }
+          } catch (fetchError) {
+            clearTimeout(timeoutId);
+            if ((fetchError as Error).name === 'AbortError') {
+              console.error('Conversation fetch timed out');
+            }
+            throw fetchError;
           }
         } else {
-          console.log('No stored conversation ID found');
           setInitialMessages([]);
           setConversationId(null);
         }
@@ -101,7 +100,9 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
       };
 
       const currentConversationId = conversationIdRef.current;
-      console.log('Sending message:', userMessage.text, 'with conversationId:', currentConversationId);
+
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 30000);
 
       try {
         const response = await fetch(`http://localhost:3000/api/chatbots/${chatbot.id}/prompt`, {
@@ -111,17 +112,22 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
             message: userMessage.text,
             conversation_id: currentConversationId,
           }),
+          signal: abortController.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) throw new Error('API request failed');
         const data = await response.json();
 
-        console.log('Received response:', data);
+        if (!data || typeof data.reply !== 'string') {
+          throw new Error('Invalid response format');
+        }
 
         signals.onResponse({ text: data.reply, role: 'assistant' });
 
         if (data.conversation_id) {
-          console.log('Updating conversation ID to:', data.conversation_id);
+          setConversationId(data.conversation_id);
           conversationIdRef.current = data.conversation_id;
 
           const storedConversationIds = JSON.parse(sessionStorage.getItem(sessionKey) || '{}');
@@ -129,8 +135,15 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
           sessionStorage.setItem(sessionKey, JSON.stringify(newIds));
         }
       } catch (error) {
-        console.error('Chat handler error:', error);
-        signals.onResponse({ error: 'Sorry, I had trouble connecting.', role: 'assistant' });
+        clearTimeout(timeoutId);
+
+        if ((error as Error).name === 'AbortError') {
+          console.error('Chat request timed out');
+          signals.onResponse({ error: 'Request timed out. Please try again.', role: 'assistant' });
+        } else {
+          console.error('Chat handler error:', error);
+          signals.onResponse({ error: 'Sorry, I had trouble connecting.', role: 'assistant' });
+        }
       }
     },
     [chatbot.id, sessionKey]
