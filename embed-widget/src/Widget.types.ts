@@ -1,7 +1,6 @@
 export interface ChatbotConfig {
   id: string;
   name: string;
-  intro: string;
   icon?: string;
 }
 
