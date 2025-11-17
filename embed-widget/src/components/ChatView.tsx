@@ -54,19 +54,13 @@ export function ChatView({ activeChatbot, storageKey, onBack, onClose, isActive 
       <>
         <WidgetHeader title={activeChatbot.name} onBack={onBack} onClose={onClose} />
         <div style={styles.chatContainer}>
-          <DeepChat ref={deepChatRef} style={deepChatStyles} connect={connectConfig} introMessage={introMessage} />
           <div
             style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'white',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              zIndex: 10,
+              height: '100%',
+              backgroundColor: 'white',
             }}
           >
             <p>Loading conversation...</p>

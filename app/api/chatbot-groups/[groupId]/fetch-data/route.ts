@@ -43,7 +43,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ groupId
   };
 
   if (!groupId) {
-    return NextResponse.json({ error: 'Group ID is required' }, { status: 400 });
+    return createResponse({ error: 'Group ID is required' }, 400);
   }
 
   try {

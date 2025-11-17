@@ -28,7 +28,13 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
     const fetchConversationHistory = async () => {
       setIsLoadingHistory(true);
       try {
-        const storedConversationIds = JSON.parse(sessionStorage.getItem(sessionKey) || '{}');
+        let storedConversationIds: Record<string, string> = {};
+        try {
+          storedConversationIds = JSON.parse(sessionStorage.getItem(sessionKey) || '{}');
+        } catch (storageError) {
+          console.error('Failed to read from sessionStorage:', storageError);
+        }
+
         const storedConversationId = storedConversationIds[chatbot.id] || null;
 
         if (storedConversationId) {
@@ -55,9 +61,13 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
               setInitialMessages(messages);
               setConversationId(storedConversationId);
             } else {
-              const newIds = { ...storedConversationIds };
-              delete newIds[chatbot.id];
-              sessionStorage.setItem(sessionKey, JSON.stringify(newIds));
+              try {
+                const newIds = { ...storedConversationIds };
+                delete newIds[chatbot.id];
+                sessionStorage.setItem(sessionKey, JSON.stringify(newIds));
+              } catch (storageError) {
+                console.error('Failed to update sessionStorage:', storageError);
+              }
               setInitialMessages([]);
               setConversationId(null);
             }
@@ -130,9 +140,15 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
           setConversationId(data.conversation_id);
           conversationIdRef.current = data.conversation_id;
 
-          const storedConversationIds = JSON.parse(sessionStorage.getItem(sessionKey) || '{}');
-          const newIds = { ...storedConversationIds, [chatbot.id]: data.conversation_id };
-          sessionStorage.setItem(sessionKey, JSON.stringify(newIds));
+          try {
+            const storedConversationIds: Record<string, string> = JSON.parse(
+              sessionStorage.getItem(sessionKey) || '{}'
+            );
+            const newIds = { ...storedConversationIds, [chatbot.id]: data.conversation_id };
+            sessionStorage.setItem(sessionKey, JSON.stringify(newIds));
+          } catch (storageError) {
+            console.error('Failed to save conversation ID to sessionStorage:', storageError);
+          }
         }
       } catch (error) {
         clearTimeout(timeoutId);
