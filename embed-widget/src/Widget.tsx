@@ -35,7 +35,7 @@ export function Widget({ groupId }: WidgetProps) {
     setActiveChatbot(null);
   }, []);
 
-  const canShowLauncher = !isLoading && !error;
+  const canShowLauncher = !isLoading;
 
   return (
     <div style={styles.container}>
