@@ -49,7 +49,7 @@ export const widgetStyles = {
     fontSize: '20px',
     cursor: 'pointer',
     color: '#888',
-    width: '30px', // Give buttons a fixed width for alignment
+    width: '30px',
     textAlign: 'center',
   },
   chatList: {
@@ -62,6 +62,13 @@ export const widgetStyles = {
     padding: '15px',
     cursor: 'pointer',
     borderBottom: '1px solid #f0f0f0',
+    width: '100%',
+    textAlign: 'left',
+    border: 'none',
+    backgroundColor: 'transparent',
+    transition: 'background-color 0.2s ease',
+    fontFamily: 'inherit',
+    fontSize: 'inherit',
   },
   chatListIcon: {
     fontSize: '24px',
