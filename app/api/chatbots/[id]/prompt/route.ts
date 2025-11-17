@@ -127,6 +127,23 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
     );
 
     const chatbotReply = openrouterResponse.data.choices[0].message.content;
+    // Log token usage
+    const usage = openrouterResponse.data.usage;
+    if (usage) {
+      try {
+        await supabase_admin.from('Usage').insert({
+          chatbot_id: chatbot_id,
+          conversation_id: current_conversation_id || null, // will be updated below if new
+          prompt_tokens: usage.prompt_tokens || 0,
+          completion_tokens: usage.completion_tokens || 0,
+          total_tokens: usage.total_tokens || 0,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (usageError) {
+        console.error('Failed to log token usage:', usageError);
+        // Don't fail the whole request if usage logging fails
+      }
+    }
 
     // Update convo history
     const newHistory: Message[] = [
