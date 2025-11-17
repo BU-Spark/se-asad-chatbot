@@ -17,15 +17,15 @@ export async function OPTIONS(req: NextRequest) {
   });
 }
 
-interface ChatbotConfig {
-  id: string;
-  name: string;
-  personality: string;
-}
-
 interface ChatbotGroup {
   id: string;
   assistant_ids: string[];
+}
+
+interface ChatbotConfig {
+  id: string;
+  name: string;
+  icon?: string;
 }
 
 export async function GET(req: NextRequest, context: { params: Promise<{ groupId: string }> }) {
@@ -78,7 +78,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ groupId
 
     const { data: assistantsData, error: assistantsError } = await supabase_admin
       .from('Chatbot')
-      .select('id, name, personality')
+      .select('id, name')
       .in('id', assistantIds);
 
     if (assistantsError) {

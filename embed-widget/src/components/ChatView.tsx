@@ -40,8 +40,11 @@ export function ChatView({ activeChatbot, storageKey, onBack, onClose, isActive 
   );
 
   const introMessage = useMemo(
-    () => (initialMessages.length === 0 ? { text: activeChatbot.intro } : undefined),
-    [initialMessages.length, activeChatbot.intro]
+    () =>
+      initialMessages.length === 0
+        ? { text: `Hello! I'm ${activeChatbot.name}. how can I help you today?` }
+        : undefined,
+    [initialMessages.length, activeChatbot.name]
   );
 
   const historyConfig = useMemo(() => (initialMessages.length > 0 ? initialMessages : undefined), [initialMessages]);
