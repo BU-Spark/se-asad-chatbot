@@ -1,0 +1,25 @@
+export interface ChatbotConfig {
+  id: string;
+  name: string;
+  icon?: string;
+}
+
+export interface WidgetProps {
+  groupId: string;
+}
+
+export interface DeepChatRequestBody {
+  messages: {
+    text: string;
+    role: 'user' | 'assistant' | 'system';
+  }[];
+}
+
+export interface DeepChatResponseSignals {
+  onResponse: (response: { text?: string; error?: string; role: 'assistant' }) => void;
+}
+
+export interface MessageContent {
+  role: 'user' | 'assistant';
+  text: string;
+}

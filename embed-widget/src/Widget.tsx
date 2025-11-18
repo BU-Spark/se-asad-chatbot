@@ -1,128 +1,88 @@
-import { useState } from 'react';
-import { DeepChat } from 'deep-chat-react';
+import { useState, useCallback } from 'react';
+import type { ChatbotConfig, WidgetProps } from './Widget.types';
+import { widgetStyles as styles } from './Widget.styles';
 
-interface WidgetProps {
-  chatbotId: string;
-}
+import { useChatbotGroup } from './hooks/useChatbotGroup';
 
-interface DeepChatRequestBody {
-  messages: {
-    text: string;
-    role: 'user' | 'assistant' | 'system';
-  }[];
-}
+import { WidgetLauncher } from './components/WidgetLauncher';
+import { LoadingPanel } from './components/LoadingPanel';
+import { ErrorPanel } from './components/ErrorPanel';
+import { ChatListView } from './components/ChatListView';
+import { ChatView } from './components/ChatView';
 
-interface DeepChatResponseSignals {
-  onResponse: (response: { text?: string; error?: string; role: 'assistant' }) => void;
-}
-
-export function Widget({ chatbotId }: WidgetProps) {
+export function Widget({ groupId }: WidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [activeChatbot, setActiveChatbot] = useState<ChatbotConfig | null>(null);
 
-  const chatHandler = async (body: DeepChatRequestBody, signals: DeepChatResponseSignals) => {
-    const userMessage = body.messages[body.messages.length - 1].text;
+  // Hook for fetching chatbot data
+  const { chatbots, isLoading, error } = useChatbotGroup(groupId);
 
-    try {
-      const response = await fetch(`http://localhost:3000/api/chatbots/${chatbotId}/prompt`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          conversation_id: conversationId, // Sends null to indicate first message
-        }),
-      });
+  // Hook for handling chat logic
+  const STORAGE_KEY = `chatbot-group_${groupId}`;
 
-      if (!response.ok) {
-        throw new Error('API request failed');
-      }
+  const openChatList = useCallback(() => setIsOpen(true), []);
 
-      const data = await response.json();
+  const closeWidget = useCallback(() => {
+    setIsOpen(false);
+    setActiveChatbot(null);
+  }, []);
 
-      if (data.conversation_id) {
-        setConversationId(data.conversation_id);
-      }
+  const selectChatbot = useCallback((bot: ChatbotConfig) => {
+    setActiveChatbot(bot);
+  }, []);
 
-      signals.onResponse({ text: data.reply, role: 'assistant' });
-    } catch (error) {
-      console.error(error);
-      signals.onResponse({
-        error: 'Sorry, I had trouble connecting.',
-        role: 'assistant',
-      });
-    }
-  };
+  const goBackToList = useCallback(() => {
+    setActiveChatbot(null);
+  }, []);
+
+  const canShowLauncher = !isLoading;
 
   return (
-    <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999 }}>
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            backgroundColor: '#0070f3',
-            color: 'white',
-            border: 'none',
-            fontSize: '28px',
-            cursor: 'pointer',
-            boxShadow: '0 4px 14px 0 rgba(0, 118, 255, 0.39)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        ></button>
-      )}
+    <div style={styles.container}>
+      {!isOpen && canShowLauncher && <WidgetLauncher onClick={openChatList} />}
 
-      {/*Chat panel*/}
       {isOpen && (
-        <div
-          style={{
-            width: '350px',
-            height: '500px',
-            boxShadow: '0 5px 40px rgba(0,0,0,0.15)',
-            borderRadius: '10px',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: 'white',
-          }}
-        >
-          {/*Header*/}
-          <div
-            style={{
-              padding: '10px',
-              backgroundColor: '#f9f9f9',
-              borderBottom: '1px solid #eee',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <p style={{ margin: 0, fontWeight: 'bold' }}>Chat Assistant</p>
-            <button
-              onClick={() => setIsOpen(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '20px',
-                cursor: 'pointer',
-                color: '#888',
-              }}
-            >
-              ✕
-            </button>
-          </div>
+        <div style={{ ...styles.panel, position: 'relative' }}>
+          {/* Show loading/error panels */}
+          {isLoading && <LoadingPanel onClose={closeWidget} />}
+          {error && <ErrorPanel error={error} onClose={closeWidget} />}
 
-          {/*Entire component*/}
-          <div style={{ flex: 1, position: 'relative' }}>
-            <DeepChat
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-              connect={{ handler: chatHandler }}
-              introMessage={{ text: 'Hello! How can I help you today?' }}
-            />
-          </div>
+          {/* Show chat list when no active chatbot */}
+          {!isLoading && !error && chatbots && !activeChatbot && (
+            <div style={{ position: 'relative', zIndex: 20, height: '100%', backgroundColor: 'white' }}>
+              <ChatListView chatbots={chatbots} onSelectChatbot={selectChatbot} onClose={closeWidget} />
+            </div>
+          )}
+
+          {/* Renders all ChatViews, hide inactive ones for optimization*/}
+          {!isLoading &&
+            !error &&
+            chatbots &&
+            chatbots.map((bot) => (
+              <div
+                key={bot.id}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  visibility: activeChatbot?.id === bot.id ? 'visible' : 'hidden',
+                  pointerEvents: activeChatbot?.id === bot.id ? 'auto' : 'none',
+                  zIndex: activeChatbot?.id === bot.id ? 10 : 1,
+                }}
+              >
+                <ChatView
+                  activeChatbot={bot}
+                  storageKey={STORAGE_KEY}
+                  onBack={goBackToList}
+                  onClose={closeWidget}
+                  isActive={activeChatbot?.id === bot.id}
+                />
+              </div>
+            ))}
         </div>
       )}
     </div>

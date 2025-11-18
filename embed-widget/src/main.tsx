@@ -3,10 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { Widget } from './Widget';
 
 const script = document.currentScript;
-const chatbotId = script?.getAttribute('data-chatbot-id');
+const chatbotGroupId = script?.getAttribute('data-chatbot-group-id');
 
-if (!chatbotId) {
-  console.error('Chatbot Embed: "data-chatbot-id" attribute not found on script tag.');
+if (!chatbotGroupId) {
+  console.error('Embed widget: "data-chatbot-group-id" attribute not on script tag.');
 } else {
   const container = document.createElement('div');
   container.id = 'chatbot-embed-root';
@@ -15,7 +15,7 @@ if (!chatbotId) {
   const root = createRoot(container);
   root.render(
     <React.StrictMode>
-      <Widget chatbotId={chatbotId} />
+      <Widget groupId={chatbotGroupId} />
     </React.StrictMode>
   );
 }
