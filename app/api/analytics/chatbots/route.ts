@@ -38,7 +38,7 @@ export async function GET() {
       // Get total tokens for this chatbot
       const { data: usageData, error: usageError } = await supabase_admin
         .from('Usage')
-        .select('total_tokens, timestamp')
+        .select('total_tokens, created_at')
         .eq('chatbot_id', chatbot.id);
 
       if (usageError) {
@@ -50,7 +50,7 @@ export async function GET() {
       // Get last used timestamp
       const lastUsed =
         usageData && usageData.length > 0
-          ? usageData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0].timestamp
+          ? usageData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].created_at
           : null;
 
       // Get conversation count for this chatbot

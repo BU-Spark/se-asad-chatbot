@@ -133,11 +133,11 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
       try {
         await supabase_admin.from('Usage').insert({
           chatbot_id: chatbot_id,
-          conversation_id: current_conversation_id || null, // will be updated below if new
+          conversation_id: current_conversation_id || null,
           prompt_tokens: usage.prompt_tokens || 0,
           completion_tokens: usage.completion_tokens || 0,
           total_tokens: usage.total_tokens || 0,
-          timestamp: new Date().toISOString(),
+          // No need to specify created_at - Supabase auto-fills it with DEFAULT NOW()
         });
       } catch (usageError) {
         console.error('Failed to log token usage:', usageError);
