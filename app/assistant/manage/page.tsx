@@ -1,3 +1,4 @@
+// app/assistant/manage/page.tsx
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -29,6 +30,7 @@ export default function ManageAssistantsPage() {
   // Fetch data
   useEffect(() => {
     let cancelled = false;
+
     async function load() {
       setLoading(true);
       try {
@@ -40,8 +42,8 @@ export default function ManageAssistantsPage() {
         if (!aRes.ok) throw new Error('Failed to load assistants');
         if (!gRes.ok) throw new Error('Failed to load groups');
 
-        const aJson = await aRes.json(); // -> Assistant[]
-        const gJson = await gRes.json(); // -> Group[]
+        const aJson = await aRes.json(); // Assistant[]
+        const gJson = await gRes.json(); // Group[]
 
         if (!cancelled) {
           setAssistants(aJson || []);
@@ -53,6 +55,7 @@ export default function ManageAssistantsPage() {
         if (!cancelled) setLoading(false);
       }
     }
+
     load();
     return () => {
       cancelled = true;
@@ -63,7 +66,9 @@ export default function ManageAssistantsPage() {
     const term = q.trim().toLowerCase();
     if (!term) return assistants;
     return assistants.filter(
-      (a) => a.name.toLowerCase().includes(term) || (a.model || '').toLowerCase().includes(term)
+      (a) =>
+        a.name.toLowerCase().includes(term) ||
+        (a.model || '').toLowerCase().includes(term)
     );
   }, [assistants, q]);
 
@@ -108,10 +113,18 @@ export default function ManageAssistantsPage() {
         body: JSON.stringify({ assistantIds: selectedIds }),
       });
       if (!res.ok) throw new Error('Failed to add to group');
+
       // optimistic update
       setGroups((prev) =>
         prev.map((g) =>
-          g.id === groupId ? { ...g, assistant_ids: Array.from(new Set([...g.assistant_ids, ...selectedIds])) } : g
+          g.id === groupId
+            ? {
+              ...g,
+              assistant_ids: Array.from(
+                new Set([...g.assistant_ids, ...selectedIds])
+              ),
+            }
+            : g
         )
       );
       setSelected({});
@@ -122,138 +135,234 @@ export default function ManageAssistantsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Manage Assistants</h1>
-        {/* removed: Open Groups view */}
-      </div>
-
-      {/* Toolbar */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search assistants"
-          className="w-72 rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm outline-none"
-        />
-        <div className="flex items-center gap-2">
-          <input
-            value={newGroupName}
-            onChange={(e) => setNewGroupName(e.target.value)}
-            placeholder="New group name"
-            className="w-56 rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm outline-none"
-          />
-          <button
-            onClick={createGroup}
-            disabled={creatingGroup || !newGroupName.trim()}
-            className="rounded-xl bg-white/10 px-3 py-2 text-sm hover:bg-white/20 disabled:opacity-50"
-          >
-            {creatingGroup ? 'Creating…' : 'Create group'}
-          </button>
-        </div>
-      </div>
-
-      {/* Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Assistants list */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-medium">All assistants</h2>
-            <div className="text-sm text-neutral-400">{selectedIds.length} selected</div>
+    <div
+      className="
+        min-h-screen w-full
+        bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.12),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(251,113,133,0.12),transparent_55%),#020617]
+      "
+    >
+      <main className="mx-auto w-full max-w-6xl px-4 py-10 md:px-8">
+        {/* Header */}
+        <header className="mb-6 border-b border-neutral-800 pb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-semibold text-neutral-50">
+                Manage assistants
+              </h1>
+              <p className="mt-2 max-w-xl text-sm text-neutral-400">
+                Search assistants, select them, and drop them into groups for
+                different workflows.
+              </p>
+            </div>
+            <div className="hidden text-xs text-neutral-500 md:block">
+              <span className="rounded-full bg-neutral-900/80 px-3 py-1">
+                {assistants.length} total assistants
+              </span>
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-neutral-800">
-            {loading ? (
-              <div className="p-8 text-sm text-neutral-400">Loading assistants…</div>
-            ) : filtered.length === 0 ? (
-              <div className="p-8 text-sm text-neutral-400">No assistants found.</div>
-            ) : (
-              <ul className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 p-3">
-                {filtered.map((a) => {
-                  const isSel = !!selected[a.id];
-                  return (
-                    <li key={a.id} className="rounded-xl border border-neutral-700 p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <div className="font-medium">{a.name}</div>
-                          <div className="text-xs text-neutral-400">{a.model || 'model: gpt-5'}</div>
-                        </div>
-                        <label className="inline-flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={isSel}
-                            onChange={(e) => setSelected((prev) => ({ ...prev, [a.id]: e.target.checked }))}
-                            className="h-4 w-4"
-                          />
-                          <span className="text-neutral-300">Select</span>
-                        </label>
-                      </div>
-                      {a.personality && <p className="mt-2 line-clamp-2 text-sm text-neutral-400">{a.personality}</p>}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        {/* Groups column */}
-        <div>
-          <h2 className="text-lg font-medium mb-3">Groups</h2>
-          <div className="space-y-3">
-            {groups.length === 0 ? (
-              <div className="rounded-2xl border border-neutral-800 p-6 text-sm text-neutral-400">
-                No groups yet. Create one above.
+          {/* Toolbar */}
+          <div className="mt-5 flex flex-col gap-3 md:flex-row">
+            <div className="flex-1">
+              <label className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                Search assistants
+              </label>
+              <div className="mt-1 flex items-center rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100">
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search by name or model"
+                  className="w-full bg-transparent outline-none placeholder:text-neutral-500"
+                />
               </div>
-            ) : (
-              groups.map((g) => {
-                const count = g.assistant_ids?.length ?? 0;
+            </div>
 
-                const handleDelete = async () => {
-                  const ok = confirm(`Delete group "${g.name}"?`);
-                  if (!ok) return;
+            <div className="w-full md:w-72">
+              <label className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                New group
+              </label>
+              <div className="mt-1 flex gap-2">
+                <input
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="Group name"
+                  className="flex-1 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500"
+                />
+                <button
+                  onClick={createGroup}
+                  disabled={creatingGroup || !newGroupName.trim()}
+                  className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-500 disabled:opacity-50"
+                >
+                  {creatingGroup ? 'Creating…' : 'Create'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
 
-                  const res = await fetch(`/api/chatbot-groups/${g.id}`, { method: 'DELETE' });
-                  if (!res.ok) {
-                    const j = await res.json().catch(() => ({}));
-                    alert(j.message || 'Failed to delete group');
-                    return;
-                  }
-                  // optimistic remove
-                  setGroups((prev) => prev.filter((x) => x.id !== g.id));
-                };
+        {/* Body layout */}
+        <section className="flex flex-col gap-6 md:flex-row">
+          {/* Assistants list */}
+          <div className="flex-1">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                All assistants
+              </h2>
+              {selectedIds.length > 0 && (
+                <div className="flex items-center gap-3 rounded-lg border border-sky-800 bg-sky-950/40 px-3 py-1.5 text-xs">
+                  <span className="text-sky-100">
+                    {selectedIds.length} assistant
+                    {selectedIds.length === 1 ? '' : 's'} selected
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelected({})}
+                    className="text-neutral-300 hover:text-neutral-50"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
+            </div>
 
-                return (
-                  <div key={g.id} className="rounded-2xl border border-neutral-800 p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="font-medium truncate">{g.name}</div>
-                      <div className="flex items-center gap-2">
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60">
+              {loading ? (
+                <div className="p-8 text-sm text-neutral-400">
+                  Loading assistants…
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="p-8 text-sm text-neutral-400">
+                  No assistants match that search.
+                </div>
+              ) : (
+                <ul className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {filtered.map((a) => {
+                    const isSel = !!selected[a.id];
+                    return (
+                      <li
+                        key={a.id}
+                        onClick={() =>
+                          setSelected((prev) => ({
+                            ...prev,
+                            [a.id]: !prev[a.id],
+                          }))
+                        }
+                        className={[
+                          'group flex cursor-pointer flex-col rounded-xl border px-4 py-3 text-sm transition',
+                          'bg-neutral-900/80 backdrop-blur',
+                          'hover:border-sky-500/70 hover:bg-neutral-900',
+                          isSel
+                            ? 'border-sky-500 shadow-[0_0_0_1px_rgba(56,189,248,0.7),0_18px_45px_rgba(15,23,42,0.9)]'
+                            : 'border-neutral-800 shadow-[0_18px_45px_rgba(15,23,42,0.8)]',
+                        ].join(' ')}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium text-neutral-50">
+                              {a.name}
+                            </div>
+                            <p className="mt-1 line-clamp-2 text-xs text-neutral-400">
+                              {a.personality || 'No description yet'}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="inline-flex items-center rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-300">
+                              {a.model || 'gpt-5'}
+                            </span>
+                            {isSel && (
+                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-500/20 text-[11px] text-sky-300">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {/* Groups column */}
+          <aside className="w-full max-w-xs space-y-3 md:w-80">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Groups
+              </h2>
+              <span className="text-[11px] text-neutral-500">
+                {groups.length} total
+              </span>
+            </div>
+
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
+              {groups.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-neutral-700 bg-neutral-900/70 px-4 py-6 text-sm text-neutral-400">
+                  No groups yet. Create one to start organizing assistants.
+                </div>
+              ) : (
+                groups.map((g) => {
+                  const count = g.assistant_ids?.length ?? 0;
+
+                  const handleDelete = async () => {
+                    const ok = confirm(`Delete group "${g.name}"?`);
+                    if (!ok) return;
+
+                    const res = await fetch(`/api/chatbot-groups/${g.id}`, {
+                      method: 'DELETE',
+                    });
+                    if (!res.ok) {
+                      const j = await res.json().catch(() => ({} as any));
+                      alert(j.message || 'Failed to delete group');
+                      return;
+                    }
+                    setGroups((prev) => prev.filter((x) => x.id !== g.id));
+                  };
+
+                  return (
+                    <div
+                      key={g.id}
+                      className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-3 text-sm shadow-[0_12px_32px_rgba(15,23,42,0.85)] transition hover:border-neutral-700"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="truncate text-sm font-medium text-neutral-50">
+                            {g.name}
+                          </div>
+                          <div className="mt-1 text-[11px] text-neutral-400">
+                            {count} {count === 1 ? 'assistant' : 'assistants'}
+                          </div>
+                        </div>
+                        <span className="inline-flex items-center rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-300">
+                          {count}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 flex gap-2">
                         <button
                           onClick={() => addToGroup(g.id)}
                           disabled={selectedIds.length === 0}
-                          className="rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20 disabled:opacity-50"
+                          className="flex-1 rounded-lg bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-50 transition hover:bg-neutral-700 disabled:opacity-50"
                         >
-                          {selectedIds.length > 0 ? `Add ${selectedIds.length} selected` : 'Add selected'}
+                          {selectedIds.length > 0
+                            ? `Add ${selectedIds.length} selected`
+                            : 'Add selected'}
                         </button>
                         <button
                           onClick={handleDelete}
-                          className="rounded-lg bg-red-500/20 px-3 py-1.5 text-sm text-red-300 hover:bg-red-500/30"
-                          aria-label={`Delete ${g.name}`}
+                          className="rounded-lg bg-red-900/30 px-3 py-1.5 text-xs font-medium text-red-300 transition hover:bg-red-700/60"
                         >
                           Delete
                         </button>
                       </div>
                     </div>
-                    <div className="mt-3 text-xs text-neutral-400">
-                      {count} {count === 1 ? 'assistant' : 'assistants'}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </div>
+                  );
+                })
+              )}
+            </div>
+          </aside>
+        </section>
+      </main>
     </div>
   );
-}
+}  
