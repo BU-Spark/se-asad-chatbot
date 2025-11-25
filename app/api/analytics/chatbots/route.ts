@@ -6,6 +6,7 @@ interface ChatbotUsage {
   id: string;
   name: string;
   totalTokens: number;
+  totalCost: number;
   conversationCount: number;
   lastUsed: string | null;
 }
@@ -35,10 +36,10 @@ export async function GET() {
 
     // Get usage data for each chatbot
     const chatbotUsagePromises = chatbots.map(async (chatbot) => {
-      // Get total tokens for this chatbot
+      // Get total tokens and cost for this chatbot
       const { data: usageData, error: usageError } = await supabase_admin
         .from('Usage')
-        .select('total_tokens, created_at')
+        .select('total_tokens, cost, created_at')
         .eq('chatbot_id', chatbot.id);
 
       if (usageError) {
@@ -46,6 +47,7 @@ export async function GET() {
       }
 
       const totalTokens = usageData?.reduce((sum, record) => sum + (record.total_tokens || 0), 0) || 0;
+      const totalCost = usageData?.reduce((sum, record) => sum + (record.cost || 0), 0) || 0;
 
       // Get last used timestamp
       const lastUsed =
@@ -69,6 +71,7 @@ export async function GET() {
         id: chatbot.id,
         name: chatbot.name,
         totalTokens,
+        totalCost,
         conversationCount,
         lastUsed,
       } as ChatbotUsage;

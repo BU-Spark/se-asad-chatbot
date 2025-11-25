@@ -137,6 +137,7 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
           prompt_tokens: usage.prompt_tokens || 0,
           completion_tokens: usage.completion_tokens || 0,
           total_tokens: usage.total_tokens || 0,
+          cost: usage.total_cost || 0,
           // No need to specify created_at - Supabase auto-fills it with DEFAULT NOW()
         });
       } catch (usageError) {

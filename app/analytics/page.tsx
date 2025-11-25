@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 interface AnalyticsOverview {
   totalTokens: number;
+  totalCost: number;
   chatbotCount: number;
   groupCount: number;
 }
@@ -13,6 +14,7 @@ interface ChatbotUsage {
   id: string;
   name: string;
   totalTokens: number;
+  totalCost: number;
   conversationCount: number;
   lastUsed: string | null;
 }
@@ -51,6 +53,10 @@ export default function AnalyticsPage() {
 
   const formatNumber = (num: number) => {
     return num.toLocaleString();
+  };
+
+  const formatCost = (cost: number) => {
+    return `$${cost.toFixed(4)}`;
   };
 
   const formatDate = (dateString: string | null) => {
@@ -125,6 +131,9 @@ export default function AnalyticsPage() {
                 <p className="text-sm text-neutral-400">Total Tokens</p>
                 <p className="mt-2 text-3xl font-bold text-emerald-400">
                   {overview ? formatNumber(overview.totalTokens) : '0'}
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  {overview ? formatCost(overview.totalCost) : '$0.0000'} <span className="text-xs">USD</span>
                 </p>
               </div>
               <div className="rounded-full bg-emerald-500/10 p-3">
@@ -202,12 +211,12 @@ export default function AnalyticsPage() {
             ) : (
               <div className="divide-y divide-neutral-800">
                 {chatbots.map((chatbot, index) => (
-                  <div key={chatbot.id} className="p-6 transition hover:bg-neutral-800/30">
+                  <div key={chatbot.id} className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         {/* Rank Badge */}
                         <div
-                          className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${
+                          className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold ${
                             index === 0
                               ? 'bg-yellow-500/20 text-yellow-400'
                               : index === 1
@@ -250,10 +259,13 @@ export default function AnalyticsPage() {
                         </div>
                       </div>
 
-                      {/* Token Count */}
+                      {/* Token Count and Cost */}
                       <div className="text-right">
                         <p className="text-2xl font-bold text-emerald-400">{formatNumber(chatbot.totalTokens)}</p>
-                        <p className="text-sm text-neutral-500">tokens</p>
+                        <p className="text-xs text-neutral-500">tokens</p>
+                        <p className="mt-1 text-sm font-medium text-neutral-400">
+                          {formatCost(chatbot.totalCost)} <span className="text-xs text-neutral-500">USD</span>
+                        </p>
                       </div>
                     </div>
                   </div>

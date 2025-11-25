@@ -24,18 +24,20 @@ export async function GET() {
     const chatbotIds = chatbots?.map((c) => c.id) || [];
     const chatbotCount = chatbotIds.length;
 
-    // Get total token usage across all user's chatbots
+    // Get total token usage and cost across all user's chatbots
     let totalTokens = 0;
+    let totalCost = 0;
     if (chatbotIds.length > 0) {
       const { data: usageData, error: usageError } = await supabase_admin
         .from('Usage')
-        .select('total_tokens')
+        .select('total_tokens, cost')
         .in('chatbot_id', chatbotIds);
 
       if (usageError) {
         console.error('Error fetching usage:', usageError);
       } else {
         totalTokens = usageData?.reduce((sum, record) => sum + (record.total_tokens || 0), 0) || 0;
+        totalCost = usageData?.reduce((sum, record) => sum + (record.cost || 0), 0) || 0;
       }
     }
 
@@ -55,6 +57,7 @@ export async function GET() {
 
     return NextResponse.json({
       totalTokens,
+      totalCost,
       chatbotCount,
       groupCount,
     });
