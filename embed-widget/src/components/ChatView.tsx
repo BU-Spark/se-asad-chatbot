@@ -2,20 +2,17 @@ import { useMemo, useRef } from 'react';
 import { DeepChat } from 'deep-chat-react';
 import type { DeepChat as DeepChatType } from 'deep-chat';
 import { widgetStyles as styles } from '../Widget.styles';
-import type { ChatbotConfig } from '../Widget.types';
 import { WidgetHeader } from './WidgetHeader';
 import { useChatSession } from '../hooks/useChatSession';
 
 interface ChatViewProps {
-  activeChatbot: ChatbotConfig;
+  groupId: string;
   storageKey: string;
-  onBack: () => void;
   onClose: () => void;
-  isActive: boolean;
 }
 
-export function ChatView({ activeChatbot, storageKey, onBack, onClose, isActive }: ChatViewProps) {
-  const { initialMessages, chatHandler, isLoadingHistory } = useChatSession(activeChatbot, storageKey, isActive);
+export function ChatView({ groupId, storageKey, onClose }: ChatViewProps) {
+  const { initialMessages, chatHandler, isLoadingHistory } = useChatSession(groupId, storageKey);
 
   const deepChatRef = useRef<DeepChatType | null>(null);
 
@@ -40,11 +37,8 @@ export function ChatView({ activeChatbot, storageKey, onBack, onClose, isActive 
   );
 
   const introMessage = useMemo(
-    () =>
-      initialMessages.length === 0
-        ? { text: `Hello! I'm ${activeChatbot.name}. how can I help you today?` }
-        : undefined,
-    [initialMessages.length, activeChatbot.name]
+    () => (initialMessages.length === 0 ? { text: 'Hello! How can I help you today?' } : undefined),
+    [initialMessages.length]
   );
 
   const historyConfig = useMemo(() => (initialMessages.length > 0 ? initialMessages : undefined), [initialMessages]);
@@ -52,7 +46,7 @@ export function ChatView({ activeChatbot, storageKey, onBack, onClose, isActive 
   if (isLoadingHistory) {
     return (
       <>
-        <WidgetHeader title={activeChatbot.name} onBack={onBack} onClose={onClose} />
+        <WidgetHeader title="Chat" onClose={onClose} />
         <div style={styles.chatContainer}>
           <div
             style={{
@@ -72,7 +66,7 @@ export function ChatView({ activeChatbot, storageKey, onBack, onClose, isActive 
 
   return (
     <>
-      <WidgetHeader title={activeChatbot.name} onBack={onBack} onClose={onClose} />
+      <WidgetHeader title="Chat" onClose={onClose} />
       <div style={styles.chatContainer}>
         <DeepChat
           ref={deepChatRef}
