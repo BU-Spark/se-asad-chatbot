@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase_admin } from '@/lib/supabase_admin';
-import { routeToChatbot, generateClarificationMessage } from './routing';
+import { routeToChatbot } from './routing';
 import { getChatbotResponse } from './llm';
 import { ChatbotGroup, Message, Conversation, ChatbotWithDescription, CLARIFICATION_BOT_ID } from './types';
 
@@ -93,16 +93,20 @@ export async function POST(req: NextRequest, context: { params: Promise<{ groupI
       }
     }
 
-    // Route to appropriate chatbot based on descriptions
-    const { chatbotId: selectedChatbotId } = await routeToChatbot(message, chatbotsWithDescriptions);
+    // Route to appropriate chatbot using LLM
+    const { chatbotId: selectedChatbotId, clarificationMessage } = await routeToChatbot(
+      message,
+      chatbotsWithDescriptions,
+      conversationHistory
+    );
 
     let botResponse: string;
 
-    // If clarification bot is selected, generate clarification message
+    // If clarification bot is selected, use the clarification message
     if (selectedChatbotId === CLARIFICATION_BOT_ID) {
-      botResponse = generateClarificationMessage(chatbotsWithDescriptions);
+      botResponse = clarificationMessage || 'Could you please provide more details about what you need help with?';
 
-      // Save conversation with clarification (don't save chatbot_id for clarification)
+      // Save conversation with clarification
       const newUserMessage: Message = { role: 'user', content: message };
       const newAssistantMessage: Message = { role: 'assistant', content: botResponse };
       const updatedMessages = [...conversationHistory, newUserMessage, newAssistantMessage];
