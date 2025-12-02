@@ -7,12 +7,12 @@ import { useChatSession } from '../hooks/useChatSession';
 
 interface ChatViewProps {
   groupId: string;
-  storageKey: string;
+  conversationId: string;
   onClose: () => void;
 }
 
-export function ChatView({ groupId, storageKey, onClose }: ChatViewProps) {
-  const { initialMessages, chatHandler, isLoadingHistory } = useChatSession(groupId, storageKey);
+export function ChatView({ groupId, conversationId, onClose }: ChatViewProps) {
+  const { initialMessages, chatHandler, isLoadingHistory } = useChatSession(groupId, conversationId);
 
   const deepChatRef = useRef<DeepChatType | null>(null);
 
@@ -35,13 +35,6 @@ export function ChatView({ groupId, storageKey, onClose }: ChatViewProps) {
     }),
     [chatHandler]
   );
-
-  const introMessage = useMemo(
-    () => (initialMessages.length === 0 ? { text: 'Hello! How can I help you today?' } : undefined),
-    [initialMessages.length]
-  );
-
-  const historyConfig = useMemo(() => (initialMessages.length > 0 ? initialMessages : undefined), [initialMessages]);
 
   if (isLoadingHistory) {
     return (
@@ -68,13 +61,7 @@ export function ChatView({ groupId, storageKey, onClose }: ChatViewProps) {
     <>
       <WidgetHeader title="Chat" onClose={onClose} />
       <div style={styles.chatContainer}>
-        <DeepChat
-          ref={deepChatRef}
-          style={deepChatStyles}
-          connect={connectConfig}
-          history={historyConfig}
-          introMessage={introMessage}
-        />
+        <DeepChat ref={deepChatRef} style={deepChatStyles} connect={connectConfig} history={initialMessages} />
       </div>
     </>
   );

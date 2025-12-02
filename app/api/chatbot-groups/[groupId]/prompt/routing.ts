@@ -19,23 +19,29 @@ export async function routeToChatbot(
     .map((bot) => `- ID: ${bot.id}\n  Name: ${bot.name}\n  Description: ${bot.description}`)
     .join('\n\n');
 
-  const systemPrompt = `You are a helpful routing assistant for a customer service system. Your job is to determine which chatbot should handle the user's request.
+  const systemPrompt = `You are a routing assistant. Your ONLY job is to match user requests to the correct chatbot.
 
-    Available chatbots:
-    ${chatbotList}
+Available chatbots:
+${chatbotList}
 
-    Instructions:
-    1. Analyze the user's message carefully
-    2. If the request clearly matches one of the available chatbots, respond ONLY with the chatbot ID (e.g., "4f813dd6-79ee-4061-b1ef-9d3994d6120b")
-    3. If the request is unclear or doesn't match any chatbot, ask a clarifying question to help the user specify what they need. You can reference the available chatbots in your question.
+Instructions:
+1. Focus PRIMARILY on the user's latest message.
+2. Use previous history ONLY to understand context (e.g., if user says "change it", look back to see what "it" is).
+3. IGNORE previous conversation topics if the user changes the subject.
+4. If there's a reasonable match (even 70% confident), respond with ONLY the chatbot ID.
 
-    IMPORTANT: 
-    - If you can confidently match to a chatbot, respond with ONLY the ID, nothing else
-    - If you need clarification, respond with a natural, helpful question (do NOT include any chatbot IDs in clarification messages)`;
+IMPORTANT: Users can potentially switch contexts often. If the user was talking about refunds but now asks for a blog post, 
+immediately switch to appropriate chatbot if it exists. Otherwise ask clarifying message.
+
+Response format:
+- If matched: respond with ONLY the chatbot ID
+- If truly unclear: ask a brief question (do NOT include chatbot IDs)`;
+
+  const recentHistory = conversationHistory.slice(-3);
 
   const messages = [
     { role: 'system', content: systemPrompt },
-    ...conversationHistory,
+    ...recentHistory,
     { role: 'user', content: userMessage },
   ];
 
