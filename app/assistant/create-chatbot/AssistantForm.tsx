@@ -64,7 +64,7 @@ export function AssistantForm({ formData, modelOptions, isCreating, onInputChang
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Description *</Label>
             <Input
               id="description"
               placeholder="Brief description of what this assistant does"
