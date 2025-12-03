@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabase_admin } from '@/lib/supabase_admin';
 
-type Group = { id: string; name: string; assistant_ids: string[]; created_at: string };
+type Group = { id: string; name: string; assistant_ids: string[]; created_at: string; deleted_at?: string | null };
 
 export async function GET() {
   const { userId: clerkId } = await auth();
@@ -32,6 +32,7 @@ export async function POST(req: Request) {
     name,
     assistant_ids: [],
     created_at: new Date().toISOString(),
+    deleted_at: null,
   };
 
   const { data: existing, error: getErr } = await supabase_admin

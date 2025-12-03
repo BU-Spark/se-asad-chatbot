@@ -15,6 +15,7 @@ type Group = {
   name: string;
   assistant_ids: string[];
   created_at?: string;
+  deleted_at?: string | null;
 };
 
 export default function ManageAssistantsPage() {
@@ -66,6 +67,10 @@ export default function ManageAssistantsPage() {
       (a) => a.name.toLowerCase().includes(term) || (a.model || '').toLowerCase().includes(term)
     );
   }, [assistants, q]);
+
+  const activeGroups = useMemo(() => {
+    return groups.filter((g) => !g.deleted_at);
+  }, [groups]);
 
   const selectedIds = useMemo(
     () =>
@@ -201,12 +206,12 @@ export default function ManageAssistantsPage() {
         <div>
           <h2 className="text-lg font-medium mb-3">Groups</h2>
           <div className="space-y-3">
-            {groups.length === 0 ? (
+            {activeGroups.length === 0 ? (
               <div className="rounded-2xl border border-neutral-800 p-6 text-sm text-neutral-400">
                 No groups yet. Create one above.
               </div>
             ) : (
-              groups.map((g) => {
+              activeGroups.map((g) => {
                 const count = g.assistant_ids?.length ?? 0;
 
                 const handleDelete = async () => {
