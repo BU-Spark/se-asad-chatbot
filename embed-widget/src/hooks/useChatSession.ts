@@ -1,105 +1,61 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import type { ChatbotConfig, DeepChatRequestBody, DeepChatResponseSignals, MessageContent } from '../Widget.types';
+import { useState, useCallback, useEffect } from 'react';
+import type { DeepChatRequestBody, DeepChatResponseSignals, MessageContent } from '../Widget.types';
 
 interface BackendMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isActive: boolean) {
-  const sessionKey = useMemo(() => `${storageKey}_session`, [storageKey]);
-
+export function useChatSession(groupId: string, conversationId: string) {
   const [initialMessages, setInitialMessages] = useState<MessageContent[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const hasLoadedRef = useRef(false);
-  const lastActiveRef = useRef(isActive);
 
   useEffect(() => {
-    const isBecomingActive = isActive && !lastActiveRef.current;
-    const isInitialMount = !hasLoadedRef.current && isActive;
-
-    lastActiveRef.current = isActive;
-
-    if (!isBecomingActive && !isInitialMount) {
-      return;
-    }
-
     const fetchConversationHistory = async () => {
       setIsLoadingHistory(true);
       try {
-        let storedConversationIds: Record<string, string> = {};
+        const url = `http://localhost:3000/api/chatbot-groups/${groupId}/conversations/${conversationId}`;
+
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => abortController.abort(), 10000);
+
         try {
-          storedConversationIds = JSON.parse(sessionStorage.getItem(sessionKey) || '{}');
-        } catch (storageError) {
-          console.error('Failed to read from sessionStorage:', storageError);
-        }
+          const response = await fetch(url, {
+            signal: abortController.signal,
+          });
 
-        const storedConversationId = storedConversationIds[chatbot.id] || null;
+          clearTimeout(timeoutId);
 
-        if (storedConversationId) {
-          const url = `http://localhost:3000/api/chatbots/${chatbot.id}/conversations/${storedConversationId}`;
+          if (response.ok) {
+            const data = await response.json();
 
-          const abortController = new AbortController();
-          const timeoutId = setTimeout(() => abortController.abort(), 10000);
+            const messages: MessageContent[] = (data.messages || []).map((msg: BackendMessage) => ({
+              role: msg.role,
+              text: msg.content,
+            }));
 
-          try {
-            const response = await fetch(url, {
-              signal: abortController.signal,
-            });
-
-            clearTimeout(timeoutId);
-
-            if (response.ok) {
-              const data = await response.json();
-
-              const messages: MessageContent[] = (data.messages || []).map((msg: BackendMessage) => ({
-                role: msg.role,
-                text: msg.content,
-              }));
-
-              setInitialMessages(messages);
-              setConversationId(storedConversationId);
-            } else {
-              try {
-                const newIds = { ...storedConversationIds };
-                delete newIds[chatbot.id];
-                sessionStorage.setItem(sessionKey, JSON.stringify(newIds));
-              } catch (storageError) {
-                console.error('Failed to update sessionStorage:', storageError);
-              }
-              setInitialMessages([]);
-              setConversationId(null);
-            }
-          } catch (fetchError) {
-            clearTimeout(timeoutId);
-            if ((fetchError as Error).name === 'AbortError') {
-              console.error('Conversation fetch timed out');
-            }
-            throw fetchError;
+            setInitialMessages(messages);
+          } else {
+            console.error('Failed to fetch conversation history');
+            setInitialMessages([]);
           }
-        } else {
-          setInitialMessages([]);
-          setConversationId(null);
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          if ((fetchError as Error).name === 'AbortError') {
+            console.error('Conversation fetch timed out');
+          }
+          throw fetchError;
         }
       } catch (error) {
         console.error('Error fetching conversation history:', error);
         setInitialMessages([]);
-        setConversationId(null);
       } finally {
         setIsLoadingHistory(false);
-        hasLoadedRef.current = true;
       }
     };
 
     fetchConversationHistory();
-  }, [chatbot.id, sessionKey, isActive]);
-
-  const conversationIdRef = useRef(conversationId);
-
-  useEffect(() => {
-    conversationIdRef.current = conversationId;
-  }, [conversationId]);
+  }, [groupId, conversationId]);
 
   const chatHandler = useCallback(
     async (body: DeepChatRequestBody, signals: DeepChatResponseSignals) => {
@@ -109,18 +65,16 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
         text: lastMessageFromChat.text,
       };
 
-      const currentConversationId = conversationIdRef.current;
-
       const abortController = new AbortController();
       const timeoutId = setTimeout(() => abortController.abort(), 30000);
 
       try {
-        const response = await fetch(`http://localhost:3000/api/chatbots/${chatbot.id}/prompt`, {
+        const response = await fetch(`http://localhost:3000/api/chatbot-groups/${groupId}/prompt`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: userMessage.text,
-            conversation_id: currentConversationId,
+            conversation_id: conversationId,
           }),
           signal: abortController.signal,
         });
@@ -135,21 +89,6 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
         }
 
         signals.onResponse({ text: data.reply, role: 'assistant' });
-
-        if (data.conversation_id) {
-          setConversationId(data.conversation_id);
-          conversationIdRef.current = data.conversation_id;
-
-          try {
-            const storedConversationIds: Record<string, string> = JSON.parse(
-              sessionStorage.getItem(sessionKey) || '{}'
-            );
-            const newIds = { ...storedConversationIds, [chatbot.id]: data.conversation_id };
-            sessionStorage.setItem(sessionKey, JSON.stringify(newIds));
-          } catch (storageError) {
-            console.error('Failed to save conversation ID to sessionStorage:', storageError);
-          }
-        }
       } catch (error) {
         clearTimeout(timeoutId);
 
@@ -162,7 +101,7 @@ export function useChatSession(chatbot: ChatbotConfig, storageKey: string, isAct
         }
       }
     },
-    [chatbot.id, sessionKey]
+    [groupId, conversationId]
   );
 
   return { initialMessages, chatHandler, isLoadingHistory };

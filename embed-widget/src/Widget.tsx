@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import type { ChatbotConfig, WidgetProps } from './Widget.types';
+import { useState, useCallback, useRef } from 'react';
+import type { WidgetProps } from './Widget.types';
 import { widgetStyles as styles } from './Widget.styles';
 
 import { useChatbotGroup } from './hooks/useChatbotGroup';
@@ -7,82 +7,129 @@ import { useChatbotGroup } from './hooks/useChatbotGroup';
 import { WidgetLauncher } from './components/WidgetLauncher';
 import { LoadingPanel } from './components/LoadingPanel';
 import { ErrorPanel } from './components/ErrorPanel';
-import { ChatListView } from './components/ChatListView';
 import { ChatView } from './components/ChatView';
 
 export function Widget({ groupId }: WidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeChatbot, setActiveChatbot] = useState<ChatbotConfig | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
-  // Hook for fetching chatbot data
-  const { chatbots, isLoading, error } = useChatbotGroup(groupId);
+  const { isLoading, error } = useChatbotGroup(groupId);
 
-  // Hook for handling chat logic
   const STORAGE_KEY = `chatbot-group_${groupId}`;
+  const SESSION_KEY = `${STORAGE_KEY}_session`;
 
-  const openChatList = useCallback(() => setIsOpen(true), []);
+  const initializationRef = useRef(false);
+
+  const openChat = useCallback(async () => {
+    if (initializationRef.current) return;
+    initializationRef.current = true;
+
+    setIsOpen(true);
+    setIsInitializing(true);
+    setInitError(null);
+
+    try {
+      // Check if we already have a conversation ID
+      let existingConversationId: string | null = null;
+      try {
+        existingConversationId = sessionStorage.getItem(SESSION_KEY);
+        console.log('Existing conversation ID:', existingConversationId);
+      } catch (e) {
+        console.error('Failed to read sessionStorage:', e);
+      }
+
+      if (existingConversationId) {
+        // Verify it exists on the backend
+        const verifyResponse = await fetch(
+          `http://localhost:3000/api/chatbot-groups/${groupId}/conversations/${existingConversationId}`
+        );
+
+        console.log('Verify response status:', verifyResponse.status);
+
+        if (verifyResponse.ok) {
+          console.log('Using existing conversation:', existingConversationId);
+          setConversationId(existingConversationId);
+          return;
+        } else {
+          console.log('Invalid conversation, removing from storage');
+          try {
+            sessionStorage.removeItem(SESSION_KEY);
+          } catch (e) {
+            console.error('Failed to remove from sessionStorage:', e);
+          }
+        }
+      }
+
+      // Create new conversation with intro message
+      console.log('Creating new conversation...');
+      const response = await fetch(`http://localhost:3000/api/chatbot-groups/${groupId}/conversations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initialMessage: {
+            role: 'assistant',
+            content: 'Hello! How can I help you today?',
+          },
+        }),
+      });
+
+      console.log('Create conversation response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to create conversation:', errorText);
+        throw new Error('Failed to create conversation');
+      }
+
+      const data = await response.json();
+      console.log('Created conversation:', data);
+
+      if (!data.conversation_id) {
+        throw new Error('No conversation_id in response');
+      }
+
+      setConversationId(data.conversation_id);
+
+      // Save to sessionStorage
+      try {
+        sessionStorage.setItem(SESSION_KEY, data.conversation_id);
+        console.log('Saved conversation ID to sessionStorage');
+      } catch (e) {
+        console.error('Failed to save to sessionStorage:', e);
+      }
+    } catch (error) {
+      console.error('Error initializing conversation:', error);
+      setInitError(error instanceof Error ? error.message : 'Failed to initialize chat');
+    } finally {
+      setIsInitializing(false);
+      initializationRef.current = false;
+    }
+  }, [groupId, SESSION_KEY]);
 
   const closeWidget = useCallback(() => {
     setIsOpen(false);
-    setActiveChatbot(null);
-  }, []);
-
-  const selectChatbot = useCallback((bot: ChatbotConfig) => {
-    setActiveChatbot(bot);
-  }, []);
-
-  const goBackToList = useCallback(() => {
-    setActiveChatbot(null);
+    setConversationId(null);
+    setInitError(null);
   }, []);
 
   const canShowLauncher = !isLoading;
 
   return (
     <div style={styles.container}>
-      {!isOpen && canShowLauncher && <WidgetLauncher onClick={openChatList} />}
+      {!isOpen && canShowLauncher && <WidgetLauncher onClick={openChat} />}
 
       {isOpen && (
         <div style={{ ...styles.panel, position: 'relative' }}>
           {/* Show loading/error panels */}
-          {isLoading && <LoadingPanel onClose={closeWidget} />}
-          {error && <ErrorPanel error={error} onClose={closeWidget} />}
+          {(isLoading || isInitializing) && <LoadingPanel onClose={closeWidget} />}
+          {(error || initError) && <ErrorPanel error={error || initError || 'Unknown error'} onClose={closeWidget} />}
 
-          {/* Show chat list when no active chatbot */}
-          {!isLoading && !error && chatbots && !activeChatbot && (
-            <div style={{ position: 'relative', zIndex: 20, height: '100%', backgroundColor: 'white' }}>
-              <ChatListView chatbots={chatbots} onSelectChatbot={selectChatbot} onClose={closeWidget} />
-            </div>
+          {/* Show chat view when ready */}
+          {!isLoading && !error && !isInitializing && !initError && conversationId && (
+            <ChatView groupId={groupId} conversationId={conversationId} onClose={closeWidget} />
           )}
-
-          {/* Renders all ChatViews, hide inactive ones for optimization*/}
-          {!isLoading &&
-            !error &&
-            chatbots &&
-            chatbots.map((bot) => (
-              <div
-                key={bot.id}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  visibility: activeChatbot?.id === bot.id ? 'visible' : 'hidden',
-                  pointerEvents: activeChatbot?.id === bot.id ? 'auto' : 'none',
-                  zIndex: activeChatbot?.id === bot.id ? 10 : 1,
-                }}
-              >
-                <ChatView
-                  activeChatbot={bot}
-                  storageKey={STORAGE_KEY}
-                  onBack={goBackToList}
-                  onClose={closeWidget}
-                  isActive={activeChatbot?.id === bot.id}
-                />
-              </div>
-            ))}
         </div>
       )}
     </div>
