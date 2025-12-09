@@ -21,5 +21,3 @@ export interface ChatbotWithDescription {
 }
 
 export const CLARIFICATION_BOT_ID = '__clarification_bot__';
-
-export const CONFIDENCE_THRESHOLD = 0.65;
