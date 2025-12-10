@@ -4,6 +4,11 @@ import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase_admin } from '../../../lib/supabase_admin';
 
+interface ChatbotData {
+  id: string;
+  name: string;
+  created_at: string;
+}
 
 export async function getUserIdOrDev() {
   const { userId } = await auth();
@@ -13,7 +18,7 @@ export async function getUserIdOrDev() {
 export async function GET() {
   try {
     const userId = await getUserIdOrDev();
-    if (!userId) return NextResponse.json([] as any[], { status: 200 });
+    if (!userId) return NextResponse.json<ChatbotData[]>([], { status: 200 });
 
     const { data, error } = await supabase_admin
       .from('Chatbot')
@@ -23,27 +28,28 @@ export async function GET() {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data ?? [], { status: 200 });
-  } catch (e: any) {
-    // never send an empty body
-    return NextResponse.json({ error: e?.message ?? 'Server error' }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Chatbot API error', error);
+    const errorMessage = error instanceof Error ? error.message : 'Server error';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
-    const uid = userId ?? 'user_2abcd'; // your Clerk user ID
+    const uid = userId; // your Clerk user ID
 
     if (!uid) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
     }
 
     const body = await req.json();
-    const { name, personality } = body;
+    const { name, description, personality } = body;
 
-    if (!name || !personality) {
+    if (!name || !description || !personality) {
       return NextResponse.json(
         {
-          error: 'Missing fields. Name and Personality are required.',
+          error: 'Missing fields. Name, Description, and Personality are required.',
         },
         { status: 400 }
       );
@@ -54,6 +60,7 @@ export async function POST(req: NextRequest) {
       .from('Chatbot')
       .insert({
         name: name,
+        description: description,
         personality: personality,
         user_id: userId,
       })
@@ -66,8 +73,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(data, { status: 201 });
-  } catch (error) {
-    console.error('Chatbots API error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Chatbot API error', error);
+    const errorMessage = error instanceof Error ? error.message : 'Server error';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
