@@ -1,5 +1,3 @@
-// app/api/chatbot-groups/[groupId]/route.ts
-
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabase_admin } from '@/lib/supabase_admin';
@@ -15,9 +13,12 @@ type Group = {
  * Add assistants to a specific group.
  * This merges new assistant IDs into the group's assistant_ids array.
  */
-export async function POST(req: Request, { params }: { params: { groupId: string } }) {
+export async function POST(req: Request, context: { params: Promise<{ groupId: string }> }) {
   const { userId: clerkId } = await auth();
   if (!clerkId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+
+  // Await params in Next.js 15
+  const { groupId } = await context.params;
 
   const { assistantIds } = await req.json();
   if (!Array.isArray(assistantIds))
@@ -35,7 +36,7 @@ export async function POST(req: Request, { params }: { params: { groupId: string
   }
 
   const groups: Group[] = (existing?.chatbot_groups ?? []) as Group[];
-  const idx = groups.findIndex((g) => g.id === params.groupId);
+  const idx = groups.findIndex((g) => g.id === groupId);
   if (idx === -1) return NextResponse.json({ message: 'Group not found' }, { status: 404 });
 
   const merged = Array.from(new Set([...(groups[idx].assistant_ids || []), ...assistantIds]));
@@ -57,11 +58,14 @@ export async function POST(req: Request, { params }: { params: { groupId: string
 
 /**
  * Delete a specific group for the current user.
- * If the group doesn’t exist, returns success anyway (idempotent delete).
+ * If the group doesn't exist, returns success anyway (idempotent delete).
  */
-export async function DELETE(_: Request, { params }: { params: { groupId: string } }) {
+export async function DELETE(_: Request, context: { params: Promise<{ groupId: string }> }) {
   const { userId: clerkId } = await auth();
   if (!clerkId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+
+  // Await params in Next.js 15
+  const { groupId } = await context.params;
 
   const { data: existing, error: getErr } = await supabase_admin
     .from('Users')
@@ -76,13 +80,13 @@ export async function DELETE(_: Request, { params }: { params: { groupId: string
 
   const groups: Group[] = (existing?.chatbot_groups ?? []) as Group[];
   const before = groups.length;
-  const updated = groups.filter((g) => g.id !== params.groupId);
+  const updated = groups.filter((g) => g.id !== groupId);
 
   // Idempotent delete: return 200 even if not found
   if (updated.length === before) {
     console.warn('DELETE /chatbot-groups: group not found', {
       clerkId,
-      groupId: params.groupId,
+      groupId: groupId,
     });
     return NextResponse.json({ success: true });
   }

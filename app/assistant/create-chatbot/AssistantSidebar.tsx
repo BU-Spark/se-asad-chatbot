@@ -1,7 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { ExampleInstruction } from './types';
+import { Lightbulb } from 'lucide-react';
 
 interface AssistantSidebarProps {
   exampleInstructions: ExampleInstruction[];
@@ -10,54 +10,29 @@ interface AssistantSidebarProps {
 
 export function AssistantSidebar({ exampleInstructions, onExampleClick }: AssistantSidebarProps) {
   return (
-    <div className="w-full lg:flex-1 max-w-md space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">✨ What You Get </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <div className="flex items-start gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5"></div>
-            <div>
-              <strong>LiteLLM Integration</strong>
-              <p className="text-muted-foreground">Direct integration with OpenRouter proxy for enhanced features</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5"></div>
-            <div>
-              <strong>Analytics Tracking</strong>
-              <p className="text-muted-foreground">Automatic cost and usage tracking with dedicated virtual key</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <div className="w-2 h-2 rounded-full bg-purple-500 mt-1.5"></div>
-            <div>
-              <strong>Widget Ready</strong>
-              <p className="text-muted-foreground">Ready to embed in groups and use with chat widgets</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">💡 Example Instructions</CardTitle>
-          <CardDescription>Click any example to use it as a starting point</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+    <div className="space-y-6">
+      {/* Example Instructions Card */}
+      <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-6 backdrop-blur-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <Lightbulb className="h-5 w-5 text-yellow-400" />
+          <h3 className="text-lg font-semibold">Example Templates</h3>
+        </div>
+        <p className="mb-4 text-xs text-neutral-400">
+          Click any template to auto-fill the form with a pre-configured assistant
+        </p>
+        <div className="space-y-3">
           {exampleInstructions.map((example, index) => (
-            <div
+            <button
               key={index}
-              className="p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={() => onExampleClick(example)}
+              className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 p-4 text-left transition hover:border-emerald-600 hover:bg-neutral-800"
             >
-              <div className="font-medium text-sm mb-1">{example.title}</div>
-              <div className="text-xs text-muted-foreground line-clamp-3">{example.instructions}</div>
-            </div>
+              <div className="mb-1 font-medium text-sm text-neutral-100">{example.title}</div>
+              <div className="text-xs text-neutral-400 line-clamp-2">{example.description}</div>
+            </button>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
