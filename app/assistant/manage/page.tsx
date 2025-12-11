@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ChevronUp, Copy, Check, Code } from 'lucide-react';
+import { ChevronDown, ChevronUp, Copy, Check, Code, Plus } from 'lucide-react';
 
 type Assistant = {
   id: string;
@@ -23,7 +23,6 @@ type Group = {
 export default function ManageAssistantsPage() {
   const [assistants, setAssistants] = useState<Assistant[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -31,6 +30,8 @@ export default function ManageAssistantsPage() {
   const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
   const [expandedCodeId, setExpandedCodeId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [draggedAssistant, setDraggedAssistant] = useState<Assistant | null>(null);
+  const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,13 +77,10 @@ export default function ManageAssistantsPage() {
     return groups.filter((g) => !g.deleted_at);
   }, [groups]);
 
-  const selectedIds = useMemo(
-    () =>
-      Object.entries(selected)
-        .filter(([, v]) => v)
-        .map(([k]) => k),
-    [selected]
-  );
+  // Get groups that an assistant belongs to
+  const getAssistantGroups = (assistantId: string) => {
+    return activeGroups.filter((g) => g.assistant_ids.includes(assistantId));
+  };
 
   const getAssistantsByGroup = (groupId: string) => {
     const group = groups.find((g) => g.id === groupId);
@@ -128,24 +126,19 @@ export default function ManageAssistantsPage() {
     }
   }
 
-  async function addToGroup(groupId: string) {
-    if (selectedIds.length === 0) {
-      alert('Select at least one assistant');
-      return;
-    }
+  async function addToGroup(groupId: string, assistantIds: string[]) {
     try {
       const res = await fetch(`/api/chatbot-groups/${groupId}/bots`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assistantIds: selectedIds }),
+        body: JSON.stringify({ assistantIds }),
       });
       if (!res.ok) throw new Error('Failed to add to group');
       setGroups((prev) =>
         prev.map((g) =>
-          g.id === groupId ? { ...g, assistant_ids: Array.from(new Set([...g.assistant_ids, ...selectedIds])) } : g
+          g.id === groupId ? { ...g, assistant_ids: Array.from(new Set([...g.assistant_ids, ...assistantIds])) } : g
         )
       );
-      setSelected({});
     } catch (e) {
       console.error(e);
       alert('Could not add assistants to group');
@@ -158,6 +151,37 @@ export default function ManageAssistantsPage() {
 
   const toggleCode = (groupId: string) => {
     setExpandedCodeId(expandedCodeId === groupId ? null : groupId);
+  };
+
+  // Drag and Drop Handlers
+  const handleDragStart = (e: React.DragEvent, assistant: Assistant) => {
+    setDraggedAssistant(assistant);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleDragEnd = () => {
+    setDraggedAssistant(null);
+    setDragOverGroup(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, groupId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setDragOverGroup(groupId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverGroup(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, groupId: string) => {
+    e.preventDefault();
+    setDragOverGroup(null);
+
+    if (draggedAssistant) {
+      await addToGroup(groupId, [draggedAssistant.id]);
+      setDraggedAssistant(null);
+    }
   };
 
   return (
@@ -187,14 +211,16 @@ export default function ManageAssistantsPage() {
             <input
               value={newGroupName}
               onChange={(e) => setNewGroupName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && createGroup()}
               placeholder="New group name"
               className="flex-1 min-w-[200px] rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-2 text-sm outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             />
             <button
               onClick={createGroup}
               disabled={creatingGroup || !newGroupName.trim()}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
+              <Plus className="h-4 w-4" />
               {creatingGroup ? 'Creating…' : 'Create Group'}
             </button>
           </div>
@@ -207,7 +233,7 @@ export default function ManageAssistantsPage() {
             <div className="mb-4">
               <h2 className="text-xl font-semibold">Groups</h2>
               <p className="text-sm text-neutral-400 mt-1">
-                Click on a group to view assistants and get the embed code
+                Click to expand • Drag assistants from the right to add them to groups
               </p>
             </div>
 
@@ -216,10 +242,10 @@ export default function ManageAssistantsPage() {
                 <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
                 <p className="mt-4 text-sm text-neutral-400">Loading groups…</p>
               </div>
-            ) : groups.length === 0 ? (
+            ) : activeGroups.length === 0 ? (
               <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-12 text-center backdrop-blur-sm">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-800">
-                  <svg className="h-8 w-8 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
+                  <svg className="h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -228,49 +254,92 @@ export default function ManageAssistantsPage() {
                     />
                   </svg>
                 </div>
-                <p className="text-neutral-400">No groups yet</p>
-                <p className="mt-1 text-sm text-neutral-500">Create your first group to get started</p>
+                <h3 className="text-lg font-semibold mb-2">No groups yet</h3>
+                <p className="text-neutral-400 mb-4">Create your first group to organize your assistants</p>
+                <div className="flex flex-col items-center gap-2 text-sm text-neutral-500">
+                  <p>💡 Groups let you embed multiple assistants together</p>
+                  <p>🎯 Perfect for different sections of your website</p>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
-                {groups.map((group) => {
+                {activeGroups.map((group) => {
                   const isExpanded = expandedGroupId === group.id;
                   const isCodeExpanded = expandedCodeId === group.id;
                   const isCopied = copiedId === group.id;
                   const groupAssistants = getAssistantsByGroup(group.id);
+                  const isDragOver = dragOverGroup === group.id;
+
+                  // Delete handler
+                  const handleDelete = async () => {
+                    const ok = confirm(`Delete group "${group.name}"?`);
+                    if (!ok) return;
+
+                    const res = await fetch(`/api/chatbot-groups/${group.id}`, { method: 'DELETE' });
+                    if (!res.ok) {
+                      const j = await res.json().catch(() => ({}));
+                      alert(j.message || 'Failed to delete group');
+                      return;
+                    }
+                    setGroups((prev) => prev.filter((x) => x.id !== group.id));
+                  };
 
                   return (
                     <div
                       key={group.id}
-                      className="rounded-xl border border-neutral-800 bg-neutral-900/50 backdrop-blur-sm overflow-hidden"
+                      className={`rounded-xl border backdrop-blur-sm overflow-hidden transition-all ${
+                        isDragOver
+                          ? 'border-emerald-500 bg-emerald-500/10 scale-[1.02]'
+                          : 'border-neutral-800 bg-neutral-900/50'
+                      }`}
+                      onDragOver={(e) => handleDragOver(e, group.id)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, group.id)}
                     >
-                      {/* Group Header - Clickable */}
-                      <button
-                        onClick={() => toggleGroup(group.id)}
-                        className="w-full p-6 text-left transition hover:bg-neutral-800/50"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <h3 className="text-lg font-semibold">{group.name}</h3>
-                              <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-400">
-                                {group.assistant_ids.length}{' '}
-                                {group.assistant_ids.length === 1 ? 'assistant' : 'assistants'}
-                              </span>
-                            </div>
-                            {group.created_at && (
-                              <p className="mt-1 text-xs text-neutral-500">
-                                Created {new Date(group.created_at).toLocaleDateString()}
-                              </p>
-                            )}
+                      {/* Group Header */}
+                      <div className="flex items-center justify-between p-6">
+                        <button onClick={() => toggleGroup(group.id)} className="flex-1 text-left">
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-lg font-semibold">{group.name}</h3>
+                            <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-400">
+                              {group.assistant_ids.length}{' '}
+                              {group.assistant_ids.length === 1 ? 'assistant' : 'assistants'}
+                            </span>
                           </div>
-                          {isExpanded ? (
-                            <ChevronUp className="h-5 w-5 text-neutral-400" />
-                          ) : (
-                            <ChevronDown className="h-5 w-5 text-neutral-400" />
+                          {group.created_at && (
+                            <p className="mt-1 text-xs text-neutral-500">
+                              Created {new Date(group.created_at).toLocaleDateString()}
+                            </p>
                           )}
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleDelete}
+                            className="rounded-lg bg-red-500/20 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/30 transition"
+                            aria-label={`Delete ${group.name}`}
+                          >
+                            Delete
+                          </button>
+                          <button onClick={() => toggleGroup(group.id)} className="p-1">
+                            {isExpanded ? (
+                              <ChevronUp className="h-5 w-5 text-neutral-400" />
+                            ) : (
+                              <ChevronDown className="h-5 w-5 text-neutral-400" />
+                            )}
+                          </button>
                         </div>
-                      </button>
+                      </div>
+
+                      {/* Drop Zone Indicator when dragging */}
+                      {isDragOver && (
+                        <div className="px-6 pb-4">
+                          <div className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-emerald-500 bg-emerald-500/5 p-4">
+                            <Plus className="h-5 w-5 text-emerald-400" />
+                            <span className="text-sm font-medium text-emerald-400">Drop to add to {group.name}</span>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Expanded Content */}
                       {isExpanded && (
@@ -279,7 +348,15 @@ export default function ManageAssistantsPage() {
                           <div>
                             <h4 className="text-sm font-medium text-neutral-300 mb-3">Assistants in this group</h4>
                             {groupAssistants.length === 0 ? (
-                              <p className="text-sm text-neutral-500">No assistants in this group yet</p>
+                              <div className="rounded-lg border-2 border-dashed border-neutral-700 bg-neutral-800/30 p-8 text-center">
+                                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-800">
+                                  <Plus className="h-6 w-6 text-neutral-500" />
+                                </div>
+                                <p className="text-sm text-neutral-400 mb-2">No assistants yet</p>
+                                <p className="text-xs text-neutral-500">
+                                  Drag assistants from the right panel or they&apos;ll be added here
+                                </p>
+                              </div>
                             ) : (
                               <ul className="space-y-2">
                                 {groupAssistants.map((assistant) => (
@@ -361,7 +438,7 @@ export default function ManageAssistantsPage() {
           <div>
             <div className="mb-4">
               <h2 className="text-xl font-semibold">All Assistants</h2>
-              <p className="text-sm text-neutral-400 mt-1">{selectedIds.length} selected</p>
+              <p className="text-sm text-neutral-400 mt-1">Drag to add to groups</p>
             </div>
 
             {/* Search */}
@@ -382,30 +459,60 @@ export default function ManageAssistantsPage() {
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="p-8 text-center">
-                  <p className="text-sm text-neutral-400">No assistants found</p>
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-800">
+                    <svg className="h-6 w-6 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-neutral-400 mb-3">No assistants found</p>
                   <Link
                     href="/assistant/create-chatbot"
-                    className="mt-4 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500"
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500"
                   >
-                    Create Assistant
+                    <Plus className="h-4 w-4" />
+                    Create Your First Assistant
                   </Link>
                 </div>
               ) : (
                 <ul className="divide-y divide-neutral-800 max-h-[600px] overflow-y-auto">
-                  {filtered.map((a) => {
-                    const isSel = !!selected[a.id];
+                  {filtered.map((assistant) => {
+                    const assistantGroups = getAssistantGroups(assistant.id);
+
                     return (
-                      <li key={a.id} className="p-3 transition hover:bg-neutral-800/50">
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={isSel}
-                            onChange={(e) => setSelected((prev) => ({ ...prev, [a.id]: e.target.checked }))}
-                            className="h-4 w-4 rounded border-neutral-600 bg-neutral-800 text-emerald-600 focus:ring-emerald-500"
-                          />
+                      <li
+                        key={assistant.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, assistant)}
+                        onDragEnd={handleDragEnd}
+                        className="p-3 transition hover:bg-neutral-800/50 cursor-move"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1 text-neutral-500">
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                            </svg>
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate">{a.name}</div>
-                            {a.model && <div className="mt-1 text-xs text-neutral-500">{a.model}</div>}
+                            <div className="font-medium text-sm truncate">{assistant.name}</div>
+                            {assistant.model && <div className="mt-1 text-xs text-neutral-500">{assistant.model}</div>}
+                            {/* Group Membership Badges */}
+                            {assistantGroups.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {assistantGroups.map((group) => (
+                                  <span
+                                    key={group.id}
+                                    className="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-xs text-blue-400"
+                                  >
+                                    {group.name}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </li>
@@ -414,22 +521,6 @@ export default function ManageAssistantsPage() {
                 </ul>
               )}
             </div>
-
-            {/* Add to Group Actions */}
-            {selectedIds.length > 0 && groups.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <p className="text-xs text-neutral-400">Add selected to group:</p>
-                {groups.map((g) => (
-                  <button
-                    key={g.id}
-                    onClick={() => addToGroup(g.id)}
-                    className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-xs font-medium text-neutral-300 transition hover:bg-neutral-700 text-left"
-                  >
-                    {g.name}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>

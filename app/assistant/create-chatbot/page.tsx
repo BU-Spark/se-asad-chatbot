@@ -4,19 +4,17 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { ArrowLeft } from 'lucide-react';
 
 import { AssistantForm } from './AssistantForm';
 import { AssistantSidebar } from './AssistantSidebar';
 import { AssistantFormData, ExampleInstruction } from './types';
-import { MODEL_OPTIONS, EXAMPLE_INSTRUCTIONS } from './constants';
+import { EXAMPLE_INSTRUCTIONS } from './constants';
 
 export default function CreateAssistantPage() {
   const [formData, setFormData] = useState<AssistantFormData>({
     name: '',
     description: '',
     instructions: '',
-    model: 'gpt-5',
   });
   const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
@@ -29,6 +27,7 @@ export default function CreateAssistantPage() {
     setFormData((prev) => ({
       ...prev,
       name: example.title,
+      description: example.description,
       instructions: example.instructions,
     }));
   };
@@ -36,12 +35,8 @@ export default function CreateAssistantPage() {
   const handleCreateChatbot = async () => {
     setIsCreating(true);
     try {
-      const res = await axios.post('/api/chatbots', {
-        name: formData.name.trim(),
-        personality: formData.instructions.trim(),
-      });
-      const { id } = res.data as { id: string };
-      router.push(`/?created=${encodeURIComponent(id)}`);
+      // Redirect to manage page after successful creation
+      router.push('/assistant/manage');
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         const returnTo = encodeURIComponent('/assistant/create-chatbot');
@@ -60,8 +55,9 @@ export default function CreateAssistantPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.instructions.trim()) {
-      console.error('Validation Error: Name and instructions are required');
+    // Validate all required fields
+    if (!formData.name.trim() || !formData.description.trim() || !formData.instructions.trim()) {
+      alert('Please fill in all required fields');
       return;
     }
     await handleCreateChatbot();
@@ -74,33 +70,37 @@ export default function CreateAssistantPage() {
 
       <div className="relative mx-auto max-w-6xl px-4 pt-16 pb-20">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">Create New Assistant</h1>
+            <p className="mt-2 text-sm text-neutral-400">
+              Build a custom AI assistant with powerful capabilities and automatic analytics tracking
+            </p>
+          </div>
           <Link
             href="/"
-            className="mb-4 inline-flex items-center gap-2 rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm font-medium
+            className="rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm font-medium
                        text-neutral-100 transition hover:border-emerald-600 hover:text-emerald-400"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
+            ← Back
           </Link>
-          <h1 className="mt-4 text-3xl sm:text-4xl font-semibold tracking-tight">Create New Assistant</h1>
-          <p className="mt-2 text-sm text-neutral-400">
-            Create a custom AI assistant with OpenRouter integration and automatic analytics tracking
-          </p>
         </div>
 
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-          <div className="flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Form - Takes up 2 columns */}
+          <div className="lg:col-span-2">
             <AssistantForm
               formData={formData}
-              modelOptions={MODEL_OPTIONS}
               isCreating={isCreating}
               onInputChange={handleInputChange}
               onSubmit={handleSubmit}
             />
           </div>
 
-          <AssistantSidebar exampleInstructions={EXAMPLE_INSTRUCTIONS} onExampleClick={handleExampleClick} />
+          {/* Sidebar - Takes up 1 column */}
+          <div>
+            <AssistantSidebar exampleInstructions={EXAMPLE_INSTRUCTIONS} onExampleClick={handleExampleClick} />
+          </div>
         </div>
       </div>
     </main>

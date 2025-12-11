@@ -1,119 +1,101 @@
 'use client';
 
-import { Button } from '@/app/components/ui/button';
-import { Input } from '@/app/components/ui/input';
-import { Label } from '@/app/components/ui/label';
-import { Textarea } from '@/app/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
-import { Loader2, Bot, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { AssistantFormData, ModelOption } from './types';
+import { AssistantFormData } from './types';
 
 interface AssistantFormProps {
   formData: AssistantFormData;
-  modelOptions: ModelOption[];
   isCreating: boolean;
   onInputChange: (field: keyof AssistantFormData, value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
-export function AssistantForm({ formData, modelOptions, isCreating, onInputChange, onSubmit }: AssistantFormProps) {
+export function AssistantForm({ formData, isCreating, onInputChange, onSubmit }: AssistantFormProps) {
+  const isValid = formData.name.trim() && formData.description.trim() && formData.instructions.trim();
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bot className="h-5 w-5" />
-          Assistant Configuration
-        </CardTitle>
-        <CardDescription>Define your assistant&apos;s personality, capabilities, and behavior</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Assistant Name *</Label>
-              <Input
-                id="name"
-                placeholder="Customer Support Bot"
-                value={formData.name}
-                onChange={(e) => onInputChange('name', e.target.value)}
-                disabled={isCreating}
-              />
-            </div>
+    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-6 backdrop-blur-sm">
+      <form onSubmit={onSubmit} className="space-y-6">
+        {/* Name Field */}
+        <div className="space-y-2">
+          <label htmlFor="name" className="text-sm font-medium text-neutral-200">
+            Assistant Name <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="name"
+            type="text"
+            placeholder="e.g., Customer Support Bot"
+            value={formData.name}
+            onChange={(e) => onInputChange('name', e.target.value)}
+            disabled={isCreating}
+            className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-2.5 text-sm text-neutral-100 outline-none transition placeholder:text-neutral-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-50"
+          />
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="model">Model</Label>
-              <Select
-                value={formData.model}
-                onValueChange={(value) => onInputChange('model', value)}
-                disabled={isCreating}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {modelOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        {/* Description Field */}
+        <div className="space-y-2">
+          <label htmlFor="description" className="text-sm font-medium text-neutral-200">
+            Description <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="description"
+            type="text"
+            placeholder="Brief description of what this assistant does"
+            value={formData.description}
+            onChange={(e) => onInputChange('description', e.target.value)}
+            disabled={isCreating}
+            className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-2.5 text-sm text-neutral-100 outline-none transition placeholder:text-neutral-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-50"
+          />
+          <p className="text-xs text-neutral-400">A short summary that helps you identify this assistant</p>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
-            <Input
-              id="description"
-              placeholder="Brief description of what this assistant does"
-              value={formData.description}
-              onChange={(e) => onInputChange('description', e.target.value)}
-              disabled={isCreating}
-            />
-          </div>
+        {/* Instructions Field */}
+        <div className="space-y-2">
+          <label htmlFor="instructions" className="text-sm font-medium text-neutral-200">
+            Instructions <span className="text-red-400">*</span>
+          </label>
+          <textarea
+            id="instructions"
+            placeholder="Detailed instructions for how the assistant should behave..."
+            value={formData.instructions}
+            onChange={(e) => onInputChange('instructions', e.target.value)}
+            disabled={isCreating}
+            rows={10}
+            className="w-full resize-none rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-2.5 text-sm text-neutral-100 outline-none transition placeholder:text-neutral-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-50"
+          />
+          <p className="text-xs text-neutral-400">
+            Be specific about the assistant&apos;s role, tone, and how it should respond to users
+          </p>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="instructions">Instructions *</Label>
-            <Textarea
-              id="instructions"
-              placeholder="Detailed instructions for how the assistant should behave..."
-              value={formData.instructions}
-              onChange={(e) => onInputChange('instructions', e.target.value)}
-              disabled={isCreating}
-              rows={8}
-              className="resize-none"
-            />
-            <p className="text-sm text-muted-foreground">
-              Be specific about the assistant&apos;s role, tone, and how it should respond.
-            </p>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="submit"
-              disabled={isCreating || !formData.name.trim() || !formData.instructions.trim()}
-              className="flex items-center gap-2"
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating Assistant...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Create Assistant
-                </>
-              )}
-            </Button>
-            <Button type="button" variant="outline" asChild>
-              <Link href="/assistants">Cancel</Link>
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-4">
+          <button
+            type="submit"
+            disabled={isCreating || !isValid}
+            className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creating Assistant...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                Create Assistant
+              </>
+            )}
+          </button>
+          <Link
+            href="/"
+            className="flex items-center justify-center rounded-lg border border-neutral-700 bg-neutral-900 px-6 py-2.5 text-sm font-medium text-neutral-100 transition hover:border-emerald-600 hover:text-emerald-400"
+          >
+            Cancel
+          </Link>
+        </div>
+      </form>
+    </div>
   );
 }
