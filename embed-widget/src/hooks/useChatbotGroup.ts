@@ -8,7 +8,7 @@ export function useChatbotGroup(groupId: string) {
     const validateGroup = async () => {
       try {
         // Only for validating
-        const response = await fetch(`http://localhost:3000/api/chatbot-groups/${groupId}/validate`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/chatbot-groups/${groupId}/validate`);
 
         if (!response.ok) {
           throw new Error('Invalid chatbot group.');

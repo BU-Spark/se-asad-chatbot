@@ -90,7 +90,7 @@ export default function ManageAssistantsPage() {
 
   const getEmbedCode = (groupId: string) => {
     return `<script 
-  src="http://localhost:3000/embed/embed.js" 
+  src="${process.env.NEXT_PUBLIC_BASE_URL}/embed/embed.js" 
   data-chatbot-group-id="${groupId}">
 </script>`;
   };

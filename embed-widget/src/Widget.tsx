@@ -43,7 +43,7 @@ export function Widget({ groupId }: WidgetProps) {
       if (existingConversationId) {
         // Verify it exists on the backend
         const verifyResponse = await fetch(
-          `http://localhost:3000/api/chatbot-groups/${groupId}/conversations/${existingConversationId}`
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/chatbot-groups/${groupId}/conversations/${existingConversationId}`
         );
 
         console.log('Verify response status:', verifyResponse.status);
@@ -64,7 +64,7 @@ export function Widget({ groupId }: WidgetProps) {
 
       // Create new conversation with intro message
       console.log('Creating new conversation...');
-      const response = await fetch(`http://localhost:3000/api/chatbot-groups/${groupId}/conversations`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/chatbot-groups/${groupId}/conversations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

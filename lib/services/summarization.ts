@@ -27,7 +27,7 @@ export async function summarizeMessages(messages: Message[]): Promise<string> {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': process.env.YOUR_SITE_URL || 'http://localhost:3000', // Optional but recommended
+      'HTTP-Referer': process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
       'X-Title': process.env.YOUR_SITE_NAME || 'My App', // Optional but recommended
     },
     body: JSON.stringify({

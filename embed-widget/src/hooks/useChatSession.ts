@@ -14,7 +14,7 @@ export function useChatSession(groupId: string, conversationId: string) {
     const fetchConversationHistory = async () => {
       setIsLoadingHistory(true);
       try {
-        const url = `http://localhost:3000/api/chatbot-groups/${groupId}/conversations/${conversationId}`;
+        const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/chatbot-groups/${groupId}/conversations/${conversationId}`;
 
         const abortController = new AbortController();
         const timeoutId = setTimeout(() => abortController.abort(), 10000);
@@ -69,7 +69,7 @@ export function useChatSession(groupId: string, conversationId: string) {
       const timeoutId = setTimeout(() => abortController.abort(), 30000);
 
       try {
-        const response = await fetch(`http://localhost:3000/api/chatbot-groups/${groupId}/prompt`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/chatbot-groups/${groupId}/prompt`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
