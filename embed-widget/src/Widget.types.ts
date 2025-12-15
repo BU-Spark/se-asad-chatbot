@@ -6,6 +6,7 @@ export interface ChatbotConfig {
 
 export interface WidgetProps {
   groupId: string;
+  apiBaseUrl: string;
 }
 
 export interface DeepChatRequestBody {

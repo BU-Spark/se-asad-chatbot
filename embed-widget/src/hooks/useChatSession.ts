@@ -6,15 +6,17 @@ interface BackendMessage {
   content: string;
 }
 
-export function useChatSession(groupId: string, conversationId: string) {
+export function useChatSession(groupId: string, conversationId: string, apiBaseUrl: string) {
   const [initialMessages, setInitialMessages] = useState<MessageContent[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   useEffect(() => {
     const fetchConversationHistory = async () => {
+      if (!apiBaseUrl) return;
+
       setIsLoadingHistory(true);
       try {
-        const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/chatbot-groups/${groupId}/conversations/${conversationId}`;
+        const url = `${apiBaseUrl}/api/chatbot-groups/${groupId}/conversations/${conversationId}`;
 
         const abortController = new AbortController();
         const timeoutId = setTimeout(() => abortController.abort(), 10000);
@@ -55,7 +57,7 @@ export function useChatSession(groupId: string, conversationId: string) {
     };
 
     fetchConversationHistory();
-  }, [groupId, conversationId]);
+  }, [groupId, conversationId, apiBaseUrl]);
 
   const chatHandler = useCallback(
     async (body: DeepChatRequestBody, signals: DeepChatResponseSignals) => {
@@ -69,7 +71,7 @@ export function useChatSession(groupId: string, conversationId: string) {
       const timeoutId = setTimeout(() => abortController.abort(), 30000);
 
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/chatbot-groups/${groupId}/prompt`, {
+        const response = await fetch(`${apiBaseUrl}/api/chatbot-groups/${groupId}/prompt`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -101,7 +103,7 @@ export function useChatSession(groupId: string, conversationId: string) {
         }
       }
     },
-    [groupId, conversationId]
+    [groupId, conversationId, apiBaseUrl]
   );
 
   return { initialMessages, chatHandler, isLoadingHistory };

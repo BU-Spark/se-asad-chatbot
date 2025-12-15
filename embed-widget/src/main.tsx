@@ -4,6 +4,7 @@ import { Widget } from './Widget';
 
 const script = document.currentScript;
 const chatbotGroupId = script?.getAttribute('data-chatbot-group-id');
+const apiBaseUrl = script?.getAttribute('data-api-origin') || '';
 
 if (!chatbotGroupId) {
   console.error('Embed widget: "data-chatbot-group-id" attribute not on script tag.');
@@ -15,7 +16,7 @@ if (!chatbotGroupId) {
   const root = createRoot(container);
   root.render(
     <React.StrictMode>
-      <Widget groupId={chatbotGroupId} />
+      <Widget groupId={chatbotGroupId} apiBaseUrl={apiBaseUrl} />
     </React.StrictMode>
   );
 }

@@ -9,13 +9,13 @@ import { LoadingPanel } from './components/LoadingPanel';
 import { ErrorPanel } from './components/ErrorPanel';
 import { ChatView } from './components/ChatView';
 
-export function Widget({ groupId }: WidgetProps) {
+export function Widget({ groupId, apiBaseUrl }: WidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
 
-  const { isLoading, error } = useChatbotGroup(groupId);
+  const { isLoading, error } = useChatbotGroup(groupId, apiBaseUrl);
 
   const STORAGE_KEY = `chatbot-group_${groupId}`;
   const SESSION_KEY = `${STORAGE_KEY}_session`;
@@ -43,7 +43,7 @@ export function Widget({ groupId }: WidgetProps) {
       if (existingConversationId) {
         // Verify it exists on the backend
         const verifyResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/chatbot-groups/${groupId}/conversations/${existingConversationId}`
+          `${apiBaseUrl}/api/chatbot-groups/${groupId}/conversations/${existingConversationId}`
         );
 
         console.log('Verify response status:', verifyResponse.status);
@@ -64,7 +64,7 @@ export function Widget({ groupId }: WidgetProps) {
 
       // Create new conversation with intro message
       console.log('Creating new conversation...');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/chatbot-groups/${groupId}/conversations`, {
+      const response = await fetch(`${apiBaseUrl}/api/chatbot-groups/${groupId}/conversations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -128,7 +128,7 @@ export function Widget({ groupId }: WidgetProps) {
 
           {/* Show chat view when ready */}
           {!isLoading && !error && !isInitializing && !initError && conversationId && (
-            <ChatView groupId={groupId} conversationId={conversationId} onClose={closeWidget} />
+            <ChatView groupId={groupId} conversationId={conversationId} apiBaseUrl={apiBaseUrl} onClose={closeWidget} />
           )}
         </div>
       )}

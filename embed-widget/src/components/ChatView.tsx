@@ -8,11 +8,12 @@ import { useChatSession } from '../hooks/useChatSession';
 interface ChatViewProps {
   groupId: string;
   conversationId: string;
+  apiBaseUrl: string;
   onClose: () => void;
 }
 
-export function ChatView({ groupId, conversationId, onClose }: ChatViewProps) {
-  const { initialMessages, chatHandler, isLoadingHistory } = useChatSession(groupId, conversationId);
+export function ChatView({ groupId, conversationId, apiBaseUrl, onClose }: ChatViewProps) {
+  const { initialMessages, chatHandler, isLoadingHistory } = useChatSession(groupId, conversationId, apiBaseUrl);
 
   const deepChatRef = useRef<DeepChatType | null>(null);
 

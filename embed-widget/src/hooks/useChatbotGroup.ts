@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 
-export function useChatbotGroup(groupId: string) {
+export function useChatbotGroup(groupId: string, apiBaseUrl: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const validateGroup = async () => {
+      if (!apiBaseUrl) return;
+
       try {
         // Only for validating
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/chatbot-groups/${groupId}/validate`);
+        const response = await fetch(`${apiBaseUrl}/api/chatbot-groups/${groupId}/validate`);
 
         if (!response.ok) {
           throw new Error('Invalid chatbot group.');
