@@ -106,7 +106,7 @@ export function Widget({ groupId, apiBaseUrl }: WidgetProps) {
       setIsInitializing(false);
       initializationRef.current = false;
     }
-  }, [groupId, SESSION_KEY]);
+  }, [groupId, SESSION_KEY, apiBaseUrl]);
 
   const closeWidget = useCallback(() => {
     setIsOpen(false);

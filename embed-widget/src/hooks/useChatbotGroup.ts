@@ -29,7 +29,7 @@ export function useChatbotGroup(groupId: string, apiBaseUrl: string) {
     };
 
     validateGroup();
-  }, [groupId]);
+  }, [groupId, apiBaseUrl]);
 
   return { isLoading, error };
 }

@@ -6,10 +6,9 @@ function requireEnv(name: string) {
   return v;
 }
 
+const supabaseUrl = requireEnv('PUBLIC_SUPABASE_URL');
+const supabaseServiceKey = requireEnv('SUPABASE_SECRET_KEY');
 
-if (!process.env.PUBLIC_SUPABASE_URL) throw new Error('PUBLIC_SUPABASE_URL missing');
-if (!process.env.SUPABASE_SECRET_KEY) throw new Error('SUPABASE_SECRET_KEY missing');
-
-export const supabase_admin = createClient(process.env.PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, {
+export const supabase_admin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { persistSession: false },
 });
