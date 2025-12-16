@@ -1,12 +1,12 @@
-import { OpenRouterClient, MemoryHistoryStorage } from "openrouter-kit";
+import { OpenRouterClient, MemoryHistoryStorage } from 'openrouter-kit';
 
 if (!process.env.OPENROUTER_API_KEY) {
-  throw new Error("OPENROUTER_API_KEY missing");
+  throw new Error('OPENROUTER_API_KEY missing');
 }
 
 export const openrouter = new OpenRouterClient({
   apiKey: process.env.OPENROUTER_API_KEY!,
-  model: "openai/gpt-4o-mini",
+  model: 'openai/gpt-4o-mini',
   debug: false,
 
   // --- Cost Tracking ---
@@ -20,8 +20,8 @@ export const openrouter = new OpenRouterClient({
   // --- Security Config ---
   security: {
     authentication: {
-      type: "api-key",
-      header: "x-openrouter-key",
+      type: 'api-key',
+      header: 'x-openrouter-key',
       required: true,
     },
     rateLimit: {
@@ -31,22 +31,18 @@ export const openrouter = new OpenRouterClient({
     },
     acl: {
       roles: {
-        user: { allow: ["chat"] },
-        admin: { allow: ["chat", "tools"] },
+        user: { allow: ['chat'] },
+        admin: { allow: ['chat', 'tools'] },
       },
     },
   },
 
   // --- Routing and fallbacks ---
-  modelFallbacks: [
-    "openai/gpt-4o",
-    "mistralai/mistral-medium",
-    "anthropic/claude-3-haiku",
-  ],
+  modelFallbacks: ['openai/gpt-4o', 'mistralai/mistral-medium', 'anthropic/claude-3-haiku'],
 
   // --- Reasoning support (opt-in per request, but ready) ---
   reasoning: {
-    effort: "medium",
+    effort: 'medium',
     max_tokens: 256,
     exclude: false,
   },
