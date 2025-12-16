@@ -35,7 +35,13 @@ export default function CreateAssistantPage() {
   const handleCreateChatbot = async () => {
     setIsCreating(true);
     try {
-      // Redirect to manage page after successful creation
+      await axios.post('/api/chatbots', {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        personality: formData.instructions.trim(),
+      });
+      router.refresh();
+      // goto manage assistants page after successful chatbot creation
       router.push('/assistant/manage');
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
